@@ -68,7 +68,9 @@ dataDir
 
 First we read in the sample description file:
 <<phenodata>>=
-pd <- read.delim(file.path(dataDir, "phenodata.txt"))
+phenodataDir <- system.file("extdata", package="charmData")
+pd <- read.delim(file.path(phenodataDir, "phenodata.txt"))
+phenodataDir
 pd
 @
 
