@@ -42,10 +42,12 @@ Martin Aryee <aryee@jhu.edu>
 
 \examples{
 	if (require(charmData) & require(BSgenome.Hsapiens.UCSC.hg18)) {
-		dataDir <- system.file("data", package="charmData")
+		phenodataDir <- system.file("extdata", package="charmData")
+		pd <- read.delim(file.path(phenodataDir, "phenodata.txt"))
 		# Read in raw data
-		pd <- read.delim(file.path(dataDir, "phenodata.txt"))
-		rawData <- readCharm(path=dataDir, files=pd$filename, sampleKey=pd)
+		dataDir <- system.file("data", package="charmData")
+		rawData <- readCharm(path=dataDir, files=pd$filename,
+			 sampleKey=pd)
 		ctrlIdx <- getControlIndex(rawData, subject=Hsapiens)
 		plotDensity(rawData, controlIndex=ctrlIdx, pdfFile="density.pdf")	
 	}

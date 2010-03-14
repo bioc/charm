@@ -7,11 +7,14 @@ Estimate percentage DNA methylation from log-ratios
 Estimate percentage DNA methylation from log-ratios
 }
 \usage{
-methPercent(m, ngc, commonParams = TRUE)
+methPercent(m, pmIndex, ngc, commonParams = TRUE)
 }
 \arguments{
   \item{m}{
 a matrix of M-values (methylation log-ratios). One column per sample.
+}
+  \item{pmIndex}{
+A vector of probe indices to use in the calculation. Usually set to the indices of the pm probes (excluding background and other non-specific controls) by using pmIndex=pmindex(dat)
 }
   \item{ngc}{
 a vector with GC-content of probes. Same length as nrow(m)
@@ -32,11 +35,12 @@ Martin Aryee <aryee@jhu.edu>
 
 \examples{
 	if (require(charmData) & require(BSgenome.Hsapiens.UCSC.hg18)) {
+		phenodataDir <- system.file("extdata", package="charmData")
+		pd <- read.delim(file.path(phenodataDir, "phenodata.txt"))
+		pd <- subset(pd, sampleID=="441_liver")
 		dataDir <- system.file("data", package="charmData")
 		setwd(dataDir)
 		# Read in raw data
-		pd <- read.delim("phenodata.txt")
-		pd <- subset(pd, sampleID=="441_liver")
 		rawData <- readCharm(files=pd$filename, sampleKey=pd)
 		# Find non-CpG control probes
 		ctrlIdx <- getControlIndex(rawData, subject=Hsapiens)	
@@ -44,6 +48,7 @@ Martin Aryee <aryee@jhu.edu>
 		m <- methp(rawData, controlIndex=ctrlIdx, returnM=TRUE)
 		# Estimate percentage methylation
 		ngc <- countGC(rawData)
-		p <- methPercent(m, ngc)
+		pmIndex <- pmindex(rawData)
+		p <- methPercent(m, pmIndex=pmIndex, ngc=ngc)
 	}
 }

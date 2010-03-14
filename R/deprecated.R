@@ -3,6 +3,30 @@
 #############################################
 if (FALSE) { 
 
+	demedian <- function(dat) {
+	    X <- getX(dat, "pm")
+	    Y <- getY(dat, "pm")
+	    pms <- pm(dat)
+	    for (chan in c("channel1", "channel2")) {
+		    for (samp in sampleNames(dat)) {
+		        pm <- log2(pms[,samp,chan])
+		        m <- median(pm)
+		        tmp <- matrix(nrow=max(Y), ncol=max(X))
+		        for (i in 1:length(pm)) {
+		            tmp[Y[i], X[i]] <- pm[i]
+		        }
+		        rm <- rowMedians(tmp, na.rm=TRUE)
+		        tmp <- sweep(tmp, 1, rm-m)
+		        tmp <- t(tmp)
+		        cm <- rowMedians(tmp, na.rm=TRUE)
+		        tmp <- sweep(tmp, 1, cm-m)
+		        pms[,samp,chan] <- 2^(sapply(1:length(pm), function(i) tmp[X[i], Y[i]]))
+		    }
+	    }
+	    pm(dat) <- pms
+	    return(dat)
+	}
+
 
 	spatialAdjust.poly <- function(dat, demedian=FALSE, cluster=NULL) {
 	    if (demedian) dat <- demedian(dat)

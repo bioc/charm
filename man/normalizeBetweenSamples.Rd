@@ -8,8 +8,9 @@ Between-sample normalization
 Between-sample normalization for two-color DNA methylation microarray data.
 }
 \usage{
-normalizeBetweenSamples	(dat, m="allQuantiles", untreated="none",
-	enriched="none", controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), 
+normalizeBetweenSamples	(dat, copy=TRUE, 
+	m="allQuantiles", untreated="none", enriched="none", 
+	controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), 
 	controlIndex=NULL, verbose=FALSE)
 }
 
@@ -17,6 +18,8 @@ normalizeBetweenSamples	(dat, m="allQuantiles", untreated="none",
   \item{dat}{
 a TilingFeatureSet object
 }
+  \item{copy}{
+Only relevant when using disk-backed objects. If TRUE a copy will be made leaving the original object (dat) unchanged. The input object will not be preserved if copy=FALSE}
   \item{m}{
 normalization method for log-ratios. "allQuantiles" for full quantile normalization, or "none"
 }
@@ -54,15 +57,16 @@ Martin Aryee <aryee@jhu.edu>
 
 \examples{
 	if (require(charmData) & require(BSgenome.Hsapiens.UCSC.hg18)) {
+		phenodataDir <- system.file("extdata", package="charmData")
+		pd <- read.delim(file.path(phenodataDir, "phenodata.txt"))
+		pd <- subset(pd, sampleID=="441_liver")
 		dataDir <- system.file("data", package="charmData")
 		setwd(dataDir)
-		pd <- read.delim("phenodata.txt")
-		pd <- subset(pd, sampleID=="441_liver")
 		rawData <- readCharm(files=pd$filename, sampleKey=pd)
 		# Correct spatial artifacts
 		dat <- spatialAdjust(rawData)
 		# Remove background signal
-		dat <- bgAdjustBgp(dat)
+		dat <- bgAdjust(dat)
 		# Find non-CpG control probes
 		ctrlIdx <- getControlIndex(rawData, subject=Hsapiens)
 		# Within-sample normalization

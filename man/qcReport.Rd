@@ -45,9 +45,10 @@ Martin Aryee <aryee@jhu.edu>
 
 \examples{
 	if (require(charmData)) {
+		phenodataDir <- system.file("extdata", package="charmData")
+		pd <- read.delim(file.path(phenodataDir, "phenodata.txt"))
 		dataDir <- system.file("data", package="charmData")
 		setwd(dataDir)
-		pd <- read.delim("phenodata.txt")
 		rawData <- readCharm(files=pd$filename, sampleKey=pd)
 		qcReport(rawData, file="qcReport.pdf")
 	}

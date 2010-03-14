@@ -1,3 +1,156 @@
+# oligo functions we'd like to import once they're exported
+#oligoBigObjectSupport <- oligo:::oligoBigObjectSupport
+#oligoBigObjectPath <- oligo:::oligoBigObjectPath
+bgindex <- oligo:::bgindex # method
+
+setOldClass("ff_matrix")
+
+#######################
+## oApply and nodeFn ##
+#######################
+setGeneric("oApply", function(object1, ...) standardGeneric("oApply"))
+setGeneric("nodeFn", function(cols, object1, ...) standardGeneric("nodeFn"))
+
+setMethod("oApply", "matrix",
+	function(object1, object2, copy=TRUE, fn, ...) {
+	    samplesByNode <- splitIndicesByNode(1:ncol(object1))
+	    if (missing(object2)) {
+			ret <- ocLapply(samplesByNode, nodeFn, object1=object1, 
+				fn=fn, ...)
+			return(do.call("cbind", ret))
+		} else {
+			ret <- ocLapply(samplesByNode, nodeFn, 
+				object1=object1, object2=object2, fn=fn, ...)
+			c1 <- do.call("cbind", lapply(ret, "[[", 1))
+			c2 <- do.call("cbind", lapply(ret, "[[", 2))
+			return(list(c1, c2))
+		}
+	})
+
+	
+setMethod("oApply", "ff_matrix", 
+	function (object1, object2, copy=TRUE, fn, ...) {
+    	stopifnot(ldStatus())
+	    if (copy) {
+			open(object1)
+	        out1 <- clone(object1, pattern = file.path(ldPath(), 
+	            "cloned-"))
+			if (!missing(object2)) {
+				open(object2)
+	        	out2 <- clone(object2, pattern = file.path(ldPath(), 
+	            	"cloned-"))
+			}
+	    }
+	    else {
+	        out1 <- object1
+			if (!missing(object2))
+				out2 <- object2
+	    }
+	    samplesByNode <- splitIndicesByNode(1:ncol(out1))
+	    if (missing(object2)) {
+			ocLapply(samplesByNode, nodeFn, object1=out1, fn=fn, ...)
+			return(out1)
+		} else {
+			ocLapply(samplesByNode, nodeFn, object1=out1, object2=out2, fn=fn, ...)
+			return(list(out1, out2))
+		}	
+	})
+
+
+setMethod("nodeFn", c("integer", "matrix"),
+	function (cols, object1, object2, fn, ...) {
+	    if (length(cols) > 0) {
+			grpCols <- splitIndicesByLength(1:length(cols), ocSamples())
+			if (missing(object2)) {
+				object1 <- object1[,cols,drop=FALSE]
+		        for (theCols in grpCols) {
+					object1[, theCols] <- fn(object1[, theCols, drop = FALSE], ...)
+				}			
+				return(object1)
+			} else {
+				object1 <- object1[,cols,drop=FALSE]
+				object2 <- object2[,cols,drop=FALSE]
+	        	for (theCols in grpCols) {
+					ret <- fn(object1[, theCols, drop = FALSE], 
+						object2[, theCols, drop = FALSE], ...)	
+					object1[, theCols] <- ret[[1]]
+					if (!is.null(ret[[2]])) object2[, theCols] <- ret[[2]]
+				}
+				return(list(object1, object2))
+			}
+	    }
+	})
+
+setMethod("nodeFn", c("integer", "ff_matrix"), 
+	function (cols, object1, object2, fn, ...) {
+    	if (length(cols) > 0) {
+	        grpCols <- splitIndicesByLength(cols, ocSamples())
+	        open(object1)
+			if (missing(object2)) {
+		        for (theCols in grpCols) {
+					object1[, theCols] <- fn(object1[, theCols, drop = FALSE], ...)
+				}			
+			} else {
+				open(object2)
+	        	for (theCols in grpCols) {
+					ret <- fn(object1[, theCols, drop = FALSE], 
+						object2[, theCols, drop = FALSE], ...)	
+					object1[, theCols] <- ret[[1]]
+					if (!is.null(ret[[2]])) object2[, theCols] <- ret[[2]]
+				}
+				close(object2)
+				rm(object2)
+			}
+	        close(object1)
+	        rm(object1, grpCols)
+	        gc()
+	    }
+	    TRUE
+	})
+
+
+##########
+## getM ##
+##########
+# method for signature TilingFeatureSet
+#setMethod("getM", "TilingFeatureSet", 
+
+setGeneric("getM", function(object1, ...) standardGeneric("getM"))
+
+setMethod("getM", "TilingFeatureSet", 
+	function(object1) {
+		c1 <- assayDataElement(object1, "channel1")
+		c2 <- assayDataElement(object1, "channel2")
+		getM(c1, c2)
+	})
+
+setMethod("getM", "matrix", 
+	function(object1, object2) log2(object1)-log2(object2))
+
+setMethod("getM", "ff_matrix", 
+	function(object1, object2) {
+		ret <- oApply(object1=object1, object2=object2, copy=TRUE, 
+			fn=function (object1, object2) list(log2(object1)-log2(object2), NULL))
+		ret[[1]]	
+	})	
+
+
+
+cloneFeatureSet <- function(object, finalizer="delete") {
+	cn <- channelNames(object)
+	if ("ff_matrix" %in% class(assayDataElement(object, cn[1]))) {
+		for (i in 1:length(cn)) {
+			chan <- assayDataElement(object, cn[i])	
+			open(chan)
+			assayDataElement(object, cn[i])	 <- clone(chan, finalizer=finalizer)
+		}
+	}
+	return(object)
+}
+
+###########
+## methp ##
+###########
 methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		withinSampleNorm="loess",
 		scale=c(0.99, 0.99),
@@ -7,7 +160,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		commonMethPercentParams=NULL,
 		verbose=TRUE, returnM=FALSE, 
 		plotDensity=NULL, plotDensityGroups=NULL) {
-		
+
 	if(!is.null(plotDensity)) {
 		pdf(file=plotDensity, height=11, width=8)
 		par(mfrow=c(5,2), mar=c(2,2,4,2))
@@ -15,7 +168,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		plotDensity(dat, main="1. Raw", lab=plotDensityGroups, 
 		 	controlIndex=controlIndex)
 	}
-	
+
 	if (is.list(betweenSampleNorm)) {
 		bs <- betweenSampleNorm
 	} else {
@@ -31,17 +184,23 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 			bs <- list(m="none", untreated="none", enriched="none")
 			if(is.null(commonMethPercentParams)) commonMethPercentParams <- FALSE
 		}
-	}	
+	}
+	if (verbose>2) print(gc())			
+	
+	dat <- cloneFeatureSet(dat)
+	
     # Spatial bias correction
     if (spatial) {
         if (verbose) message("Spatial normalization")
-       	dat <- spatialAdjust(dat)
+       	dat <- spatialAdjust(dat, copy=FALSE)
     }
+	if (verbose>2) print(gc())		
     # Background removal
 	if (bgSubtract) {
     	if (verbose) message("Background removal")
-		dat <- bgAdjustBgp(dat)
+		dat <- bgAdjust(dat, copy=FALSE)
 	}
+	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="2. After spatial & bg", lab=plotDensityGroups, controlIndex=controlIndex)
 	}	
@@ -50,12 +209,15 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
 	}
 	if (verbose) message("Within sample normalization: ", withinSampleNorm) 
-	dat <- normalizeWithinSamples(dat, method=withinSampleNorm,
+	dat <- normalizeWithinSamples(dat, copy=FALSE, 
+		method=withinSampleNorm,
 		scale=scale, controlIndex=controlIndex, verbose=verbose)
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="3. After within-sample norm", 
 			lab=plotDensityGroups, controlIndex=controlIndex)
 	}
+	if (verbose>2) print(gc())		
+
     # Between sample normalization    
 	if (verbose) {
 		message("Between sample normalization", appendLF=FALSE)
@@ -66,50 +228,36 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 			message (": ", betweenSampleNorm)
 		}
 	}	
-    dat <- normalizeBetweenSamples(dat, m=bs$m, 
-		untreated=bs$untreated, 
-        enriched=bs$enriched, controlProbes=controlProbes, 
-		controlIndex=controlIndex, verbose=verbose)
-	M <- getM(dat)[pmindex(dat),,drop=FALSE]
-
+    dat <- normalizeBetweenSamples(dat, copy=FALSE,
+		m=bs$m, untreated=bs$untreated, enriched=bs$enriched,
+		controlProbes=controlProbes, controlIndex=controlIndex,
+		verbose=verbose)
+	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="4. After between-sample norm",
 		 lab=plotDensityGroups, controlIndex=controlIndex)
 	}		
-	
-	if (returnM=="TRUE" | returnM=="+") {
-		retval <- M
-	} else if (returnM=="-") {
-		retval <- -M
+
+	if (returnM=="TRUE") {
+		retval <- getM(dat)	
 	} else {
 	    if (verbose) message("Estimating percentage methylation")
-     	retval <- methPercent(m=M, commonParams=commonMethPercentParams,
+     	retval <- methPercent(m=getM(dat), pmIndex=pmindex(dat),
+			commonParams=commonMethPercentParams,
 	 		ngc=countGC(dat))
 	}
+	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		if (is.null(controlIndex)) controlIndex <- getControlIndex(dat)
-		if(returnM=="FALSE") plotDensity(retval, main="5. Percentage methylation", rx=c(0,1), lab=plotDensityGroups, controlIndex=controlIndex)
+		if(returnM=="FALSE") 
+			plotDensity(retval, main="5. Percentage methylation", 
+			rx=c(0,1), lab=plotDensityGroups, controlIndex=controlIndex)
 		dev.off()		
 	}
+	rm(dat)
     return(retval)
 }
 
-
-scaleSamples <- function(dat, scale=c(0.99, 0.99)) {
-	if (length(scale)==2) {
-		pms <- pm(dat)
-		c1 <- log2(pms[,,1,drop=FALSE])
-		c2 <- log2(pms[,,2,drop=FALSE])
-		M <- c1-c2		
-		x <- apply(M, 2, quantile, scale[1], na.rm=TRUE)
-		adj <- x / -log(1-scale[2])
-		M <- sweep(M, 2, adj, FUN="/")
-		c2 <- c1-M
-		pms[,,2] <- 2^c2
-		pm(dat) <- pms
-	}
-	return(dat)
-}		
 
 
 readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys", 
@@ -160,19 +308,20 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 			"Untreated channel file name", 
 			"Methyl-depleted channel file name"),
 		channel=factor(c(rep("_ALL_", ncol(pd)-2), 
-			"channel1", "channel2")))
+			"channel1", "channel2"), 
+			levels=c("channel1", "channel2", "_ALL_")))
 			
 	## TEMPORARY FIX TO REMAIN BACKWARD COMPATABILITY WITH ##
 	## oligo 1.10.x (Bioconductor 2.5). This fix avoids    ##
 	## a warning 										   ## 		
-	version <- as.numeric(sub(".*\\.(.*)\\..*", "\\1",
-	 	packageDescription("oligo", field="Version")))
-	if (version<11) {	
-		vpd <- data.frame(
-			labelDescription=c(rep(NA, ncol(pd)-2), 
-				"Untreated channel file name", 
-				"Methyl-depleted channel file name"))
-	}
+	#version <- as.numeric(sub(".*\\.(.*)\\..*", "\\1",
+	# 	packageDescription("oligo", field="Version")))
+	#if (version<11) {	
+	#	vpd <- data.frame(
+	#		labelDescription=c(rep(NA, ncol(pd)-2), 
+	#			"Untreated channel file name", 
+	#			"Methyl-depleted channel file name"))
+	#}
 	## END TEMPORARY FIX ##
 	 		
     pdd <- new("AnnotatedDataFrame", data=pd, varMetadata=vpd)
@@ -184,72 +333,50 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 }
 
 
+#################
+## plotDensity ##
+#################
 plotDensity <- function(dat, rx=c(-4,6), controlIndex=NULL, 
 		pdfFile=NULL, main=NULL, lab=NULL) {
 	if (!is.null(pdfFile)) {
 		pdf(pdfFile)
 		par(mfcol=c(2,1))
 	}
-	if (any(class(dat)=="TilingFeatureSet2") |
-	 		any(class(dat)=="TilingFeatureSet")) {
-		M <- getM(dat)[pmindex(dat),,drop=FALSE]
+	if ("TilingFeatureSet" %in% class(dat)) {
+		M <- getM(dat)
+		pmIndex <- pmindex(dat)
 		if (is.null(lab)) lab <- sampleNames(dat)
 	} else {
 		M <- dat
+		pmIndex <- 1:nrow(M)
 		if (is.null(lab)) lab <- colnames(dat)		
 	}
 	if (is.null(controlIndex)) controlIndex <- getControlIndex(dat)
-	plotDensityMat(M, xlab="M", lab=lab, 
+	plotDensityMat(M, idx=pmIndex, xlab="M", lab=lab, 
 		main=paste(main,"\nAll probes"), rx=rx)
-	plotDensityMat(M[controlIndex,,drop=FALSE], xlab="M", lab=lab, 
+	plotDensityMat(M, idx=pmIndex[controlIndex], xlab="M", lab=lab, 
 		main=paste(main, "\nControl probes"), rx=rx)
 	if (!is.null(pdfFile)) dev.off()
 }
 
-normalizeLoess <- function(dat, controlIndex=NULL, 
-		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), span=0.3,
-		by="A", approx=TRUE, breaks=1000) {
-	if (is.null(controlIndex)) {
-    	controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
+plotDensityMat <- function (x, idx, main = NULL, 
+    ylab = "Density", xlab = "M", lab = NULL, rx = NULL, ry = NULL, 
+    legendPos = "topright", cex=0.8) {
+	lab <- as.factor(lab)
+	if (missing(idx)) idx <- 1:nrow(x)
+	if ("matrix" %in% class(x)) d <- apply(x[idx,], 2, density, na.rm = TRUE)
+	if ("ff_matrix" %in% class(x)) {
+		d <- ffcolapply(density(x[idx,i1:i2], na.rm=TRUE), X=x, 
+			BATCHSIZE=1, BATCHBYTES=2^30, RETURN=TRUE, CFUN="list")
 	}
-	pms <- pm(dat)
-	for (i in 1:dim(dat)["Samples"]) {
-		c1 <- log2(pms[,i,"channel1"])
-		c2 <- log2(pms[,i,"channel2"])
-		y <- c1-c2
-		if (by=="tot") {
-			x <- c1
-		} else if (by=="A") {
-			x <- (c1+c2)/2
-		}
- 		fit <- loess(y ~ x, subset = controlIndex,
-               na.action = na.exclude, degree=1, surface = "direct",
- 			   span=span)
-		adj <- predictLoess(fit, newdata=x, approx=approx, breaks=breaks)
-		pms[, i, "channel2"] <- 2^(c2 + adj)
-	}
-	pm(dat) <- pms
-	return(dat)
+    if (is.null(rx)) rx <- range(sapply(d, function(i) i$x))
+    if (is.null(ry)) ry <- range(sapply(d, function(i) i$y))
+    plot(rx, ry, type = "n", xlab = xlab, ylab = ylab, main = main)
+    sapply(1:length(d), function(i) lines(d[[i]], col = lab[i]))
+    legend(legendPos, legend = levels(lab), 
+		text.col = 1:length(levels(lab)), cex = cex)
 }
 
-
-predictLoess <- function(fit, newdata, approx=TRUE, breaks=1000) {
-	if (approx) {
-		newdataBin <- cut(newdata, breaks=breaks, ordered.result=TRUE)
-		binMean <- tapply(newdata, newdataBin, mean)
-		isNa <- which(is.na(binMean))
-		adj <- rep(NA, length(binMean))
-		if (length(isNa)==0) {
-			adj <- predict(fit, newdata = binMean)
-		} else {
-			adj[-isNa] <- predict(fit, newdata = binMean[-isNa])
-		}
-		ret <- adj[newdataBin]
-	} else {
-		ret <- predict(fit, newdata=newdata)
-	}
-	return(ret)
-}
 	
 
 regionFilter <- function(x, region, f) {
@@ -258,105 +385,7 @@ regionFilter <- function(x, region, f) {
 	return(x)
 }
 
-normalizeWithinSamples <- function (dat, method = "loess", 
-	scale=c(0.99, 0.99), 
-	controlProbes = c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-	controlIndex = NULL, approx=TRUE, breaks=1000, 
-	verbose=FALSE) {
-    #if (method=="gc") {
-	if (grepl("gc", method)) {
-        mAdj <- diffAmpEstGC(dat, method = method, controlProbes = controlProbes)
-        dat <- diffAmpAdjustGC(dat, mAdj)
-    }
-	if (grepl("loess", method)) {
-			dat <- normalizeLoess(dat, controlIndex=controlIndex, 
-				controlProbes=controlProbes, 
-				approx=approx, breaks=breaks)
-	}
-	if (grepl("median", method)) {
-        if (is.null(controlIndex)) {
-            controlIndex <- getControlIndex(dat, controlProbes = controlProbes)
-		}
-        datPm <- log2(pm(dat))
-        M <- datPm[, , "channel1"] - datPm[, , "channel2"]
-        mCtrl <- M[controlIndex, ]
-        mAdj <- apply(mCtrl, 2, median, na.rm=TRUE)
-        datPm[, , "channel2"] <- sweep(datPm[, , "channel2"], 
-            2, mAdj, FUN = "+")
-        pm(dat) <- 2^datPm
-    }
-	dat <- scaleSamples(dat, scale) 
-    return(dat)
-}
 
-normalizeBetweenSamples <- function(dat, m="allQuantiles",
- 		untreated="none", enriched="none", 
-		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-		controlIndex=NULL, verbose=FALSE) {    
-
-	pms <- pm(dat)
-	M <- getM(dat)[pmindex(dat),,drop=FALSE]	
-	if (m!="none"){
-		M <- normQuantile(M, method=m)
-		for (i in 1:ncol(M)) {
-			pms[,i,"channel2"] <- 2^(log2(pms[,i,"channel1"]) - M[,i])	
-		}		
-	}
-    ## Normalize untreated (leaving M unchanged)
-    if (untreated=="complete") {
-       	m <- rowMedians(log2(pms[,,"channel1"]))
-		for (i in 1:ncol(pms)) {
-			pms[,i,"channel1"] <- 2^m
-		}
-    } else {
-        pms[,,"channel1"] <- 2^(normQuantile(log2(pms[,,"channel1"]), method=untreated))
-    }
-    for (i in 1:ncol(M)) {
-		pms[,i,"channel2"] <- 2^(log2(pms[,i,"channel1"]) - M[,i])
-	}
-    pm(dat) <- pms
-    ## Normalize enriched 
-	if (enriched=="sqn") {
-		if(is.null(controlIndex)) controlIndex <- getControlIndex(dat, controlProbes=controlProbes) 
-		pms[,,"channel2"] <- 2^(SQN(y=log2(pms[,,"channel2"]), ctrl.id=controlIndex))
-	} else {
-        pms[,,"channel2"] <- 2^(normQuantile(log2(pms[,,"channel2"]), method=enriched))
-    }
-    pm(dat) <- pms
-    return(dat)
-} 
-
-
-normQuantile <- function(x, method="allQuantiles") {
-    if (method=="99thQuantile") method="99" # Legacy option
-    if (method=="none") {
-            # Pass through option
-    } else if (method=="allQuantiles") {
-		if (any(class(x)=="ff")) {
-			x[,] <- normalize.quantiles(x[,], copy=FALSE) 			
-		} else {
-        	x <- normalize.quantiles(x,copy=FALSE) 
-		}
-    } else if (!is.na(as.numeric(method)) & (as.numeric(method)>=0) & (as.numeric(method)<=100)) {
-		if (any(class(x)=="ff")) {
-			qnt <- rep(NA, ncol(x))
-			for (i in 1:ncol(x)) {
-				qnt[i] <- quantile(x[,i], as.numeric(method)/100, na.rm=TRUE)
-			}
-			adj <- qnt/median(qnt)
-			for (i in 1:ncol(x)) {
-				x[,i] <- x[,i] / adj[i]
-			}
-		} else {
-	        qnt <- apply(x, 2, quantile, as.numeric(method)/100, na.rm=TRUE)
-	        adj <- qnt / median(qnt)
-	        x <- sweep(x, 2, adj, FUN="/")
-		}
-    } else {
-        stop("Invalid option '", method, "' to normQuantile\n")
-    }
-    return(x)
-} 
 
 ## Uses all control and bg probes passed to it
 normControlBg <- function(pms, bgs=NULL, controlIndex=NULL, affinity=NULL) {
@@ -516,58 +545,44 @@ cpgdensity <-function(subject, chr, pos, windowSize=500, sequence="CG") {
     for (curchr in (names(idx))) {
             if (curchr %in% names(subject)) {
                 chrseq <- subject[[curchr]]
-                curpos <- pos[idx[[curchr]]]
-                v <- suppressWarnings(Views(chrseq, start=curpos-windowSize/2, end=curpos+windowSize/2))
-                d <- suppressWarnings(DNAStringSet(v))
-                numcpg <- vcountPattern(s, d, fixed=TRUE)
-                cpgdensity[idx[[curchr]]] <- numcpg/windowSize       
+				if (inherits(chrseq, "DNAString")) {
+	                curpos <- pos[idx[[curchr]]]
+	                v <- suppressWarnings(Views(chrseq, start=curpos-windowSize/2, end=curpos+windowSize/2))
+	                d <- suppressWarnings(DNAStringSet(v))
+	                numcpg <- vcountPattern(s, d, fixed=TRUE)
+	                cpgdensity[idx[[curchr]]] <- numcpg/windowSize       
+				}
             }
     }
     cpgdensity
 }
 
-demedian <- function(dat) {
-    X <- getX(dat, "pm")
-    Y <- getY(dat, "pm")
-    pms <- pm(dat)
-    for (chan in c("channel1", "channel2")) {
-	    for (samp in sampleNames(dat)) {
-	        pm <- log2(pms[,samp,chan])
-	        m <- median(pm)
-	        tmp <- matrix(nrow=max(Y), ncol=max(X))
-	        for (i in 1:length(pm)) {
-	            tmp[Y[i], X[i]] <- pm[i]
-	        }
-	        rm <- rowMedians(tmp, na.rm=TRUE)
-	        tmp <- sweep(tmp, 1, rm-m)
-	        tmp <- t(tmp)
-	        cm <- rowMedians(tmp, na.rm=TRUE)
-	        tmp <- sweep(tmp, 1, cm-m)
-	        pms[,samp,chan] <- 2^(sapply(1:length(pm), function(i) tmp[X[i], Y[i]]))
-	    }
-    }
-    pm(dat) <- pms
-    return(dat)
-}
+
+
+##############
+## qcReport ##
+##############
 
 qcReport <- function(dat, file=NULL, utRange=c(30,100), enRange=c(8,12), numProbes=5e+5, blockSize) {
     # Calculate summary quality scores
-	n <- nrow(pm(dat))
+	n <- length(pmindex(dat))
 	if (numProbes==-1) numProbes <- n
 	if (n < numProbes) numProbes <- n
 	idx <- as.integer(seq(1, n, length.out=numProbes))
-    pmQual <- pmQuality(dat, idx=idx) 
+    pmQual <- pmQuality(dat, idx=idx)[,,drop=FALSE] 
     X <- getX(dat, "pm")[idx]
     Y <- getY(dat, "pm")[idx]
 	if(missing(blockSize)) blockSize <- getBlockSize(dat)
     imgs1 <- arrayImage(X,Y, pmQual, blockSize=blockSize)
  	#sd1 <- unlist(lapply(imgs1, function(x) sd(as.vector(x$z), na.rm=TRUE)))
 
-	tmp <- arrayImage(X,Y, log2(pm(dat)[idx,,"channel1"]),
-		blockSize=blockSize)
+	z <- assayDataElement(dat, "channel1")[pmindex(dat)[idx],, drop = FALSE]
+	tmp <- arrayImage(X,Y, log2(z),	blockSize=blockSize)
 	sd1 <- unlist(lapply(tmp, function(x) sd(as.vector(x$z), na.rm=TRUE)))
-	imgs2 <- arrayImage(X,Y, log2(pm(dat)[idx,,"channel2"]),
-		blockSize=blockSize)
+	rm(z, tmp)
+	z <- assayDataElement(dat, "channel2")[pmindex(dat)[idx],, drop = FALSE]
+	imgs2 <- arrayImage(X,Y, log2(z), blockSize=blockSize)
+	rm(z)
  	sd2 <- unlist(lapply(imgs2, function(x) sd(as.vector(x$z), na.rm=TRUE)))
 
 	sdRange <- c(0, max(sd1, sd2)*1.1)
@@ -649,6 +664,7 @@ qcReport <- function(dat, file=NULL, utRange=c(30,100), enRange=c(8,12), numProb
     return(as.data.frame(cbind(pmSignal, sd1, sd2)))
 }
 
+
 arrayImage <- function(x,y,z, view="2d", blockSize=50) {
     if (is.null(dim(z))) z <- as.matrix(z)
     if (view=="col") {
@@ -691,40 +707,36 @@ arrayPlot <- function(imgs, xlab="NULL", r=NULL) {
     }
 }
 
-plotDensityMat <- function (x, main = NULL, 
-    ylab = "Density", xlab = "M", lab = NULL, rx = NULL, ry = NULL, 
-    legendPos = "topright", cex=0.8) {
-	lab <- as.factor(lab)
-    d <- apply(x, 2, density, na.rm = TRUE)
-    if (is.null(rx)) rx <- range(sapply(d, function(i) i$x))
-    if (is.null(ry)) ry <- range(sapply(d, function(i) i$y))
-    plot(rx, ry, type = "n", xlab = xlab, ylab = ylab, main = main)
-    sapply(1:length(d), function(i) lines(d[[i]], col = lab[i]))
-    legend(legendPos, legend = levels(lab), 
-		text.col = 1:length(levels(lab)), cex = cex)
-}
 
-## fn(pm) where fn is the ECDF of bg
+
+###############
+## pmQuality ##
+###############
 pmQuality <- function(dat, channel="channel1", verbose=FALSE, idx=NULL) {
-	if (is.null(idx)) idx <- 1:nrow(pm(dat))
+	# TODO: parallelize
+	if (is.null(idx)) idx <- 1:length(pmindex(dat))
     Ngc <- countGC(dat, "pm")[idx]
     bgNgc <- countGC(dat, "bg")  
-
-	pms <- pm(dat)[idx,,,drop=FALSE]
-	bgs <- bg(dat)
-	pmq <- sapply(1:ncol(pms), function(i) {
-	    fn <- tapply(bgs[,i,channel], bgNgc, ecdf)
-	    ret <- rep(NA, length(Ngc))
+	pmIndex <- pmindex(dat)
+	bgIndex <- bgindex(dat)
+	x <- assayDataElement(dat, channel)
+	if ("ff_matrix" %in% class(x)) {
+		ret <- ff(vmode="double", dim=c(length(idx), ncol(x)),
+			pattern=file.path(ldPath(), "pmq-"))
+	} else {
+		ret <- matrix(nrow=length(idx), ncol=ncol(x))
+	}
+	for (i in 1:ncol(x)) {
+    	fn <- tapply(x[bgIndex,i], bgNgc, ecdf)
 		for (ngc in unique(Ngc)) {
-	        idx <- Ngc==ngc
+	        curIdx <- Ngc==ngc
 	        closestIdx <- order(abs(as.numeric(names(fn))-ngc))[1]
 	        bgngc <- as.character(names(fn)[closestIdx])
-			ret[idx] <- 100 * fn[[bgngc]](pms[idx,i,channel])   
+			ret[curIdx,i] <- 100 * fn[[bgngc]](x[pmIndex[idx][curIdx],i])   
 	    }
-		return(ret)
-    })
-	colnames(pmq) <- sampleNames(dat)
-	return(pmq)
+	}
+	colnames(ret) <- sampleNames(dat)
+	return(ret)
 }
 
 pmvsbg <- function(...) {
@@ -781,6 +793,38 @@ countSeq <- function(subject, chr, start, end, seq) {
 }
 
 
+###################
+## spatialAdjust ##
+###################
+spatialAdjustAtom <- function(x, d, na) {
+	for (i in 1:ncol(x)) {
+			x[!na,i] <- 2^(spatialAdjustVec(log2(x[!na,i]), d)$zAdj) 
+			#gc()
+		}
+	return(x)
+}
+
+spatialAdjust <- function(dat, copy=TRUE, blockSize, theta=1) {
+	if(missing(blockSize)) blockSize <- getBlockSize(dat)
+	c1 <- assayDataElement(dat, "channel1")
+	c2 <- assayDataElement(dat, "channel2")
+	X <- Y <- rep(NA, nrow(c1))
+	pmi <- pmindex(dat)
+	bgi <- bgindex(dat)
+    X[pmi] <- getX(dat, "pm")
+    Y[pmi] <- getY(dat, "pm")
+	X[bgi] <- getX(dat, "bg")  
+	Y[bgi] <- getY(dat, "bg")  
+	nx <- max(X, na.rm=TRUE)/blockSize
+	ny <- max(Y, na.rm=TRUE)/blockSize
+	na <- is.na(X) & is.na(Y)
+	d <- discretize.image(cbind(Y[!na], X[!na]), m=ny, n=nx)
+	c1 <- oApply(c1, copy=copy, fn=spatialAdjustAtom, d=d, na=na)
+	c2 <- oApply(c2, copy=copy, fn=spatialAdjustAtom, d=d, na=na)
+	assayDataElement(dat, "channel1") <- c1
+	assayDataElement(dat, "channel2") <- c2	
+	return(dat)
+}
 
 spatialAdjustVec <- function(z, d, ims=NULL, theta=1) {
 	if (is.null(ims)) {
@@ -795,44 +839,17 @@ spatialAdjustVec <- function(z, d, ims=NULL, theta=1) {
 	return(list(zAdj=zAdj, ims=ims))
 }
 
-spatialAdjust <- function(dat, blockSize, theta=1) {
-	if(missing(blockSize)) blockSize <- getBlockSize(dat)
-    x <- getX(dat, "pm")
-    y <- getY(dat, "pm")
-    bgX <- getX(dat, "bg")  
-    bgY <- getY(dat, "bg")     
-    NCOL=dim(dat)["Samples"]
-	pms <- pm(dat)
-	bgs <- bg(dat)
-	nx <- max(x)/blockSize
-	ny <- max(y)/blockSize
-	d <- discretize.image(cbind(y, x), m=ny, n=nx)
-	dBg <- discretize.image(cbind(bgY, bgX), grid=d$grid)
-	for (i in 1:ncol(pms)) {
-		for (channel in 1:2) {
-			tot <- log2(pms[,i, channel])
-		    bgTot <- log2(bgs[,i, channel])
-			sm <- spatialAdjustVec(tot, d)
-			pms[,i, channel] <- 2^sm$zAdj
-			smBg <- spatialAdjustVec(bgTot, dBg, sm$ims)
-			bgs[,i, channel] <- 2^smBg$zAdj
-			}
-		}
-	pm(dat) <- pms
-	bg(dat) <- bgs    		
-    return(dat)
-}
+
 
 getBlockSize <- function(dat, probesPerBlock=1250) {
 	x<-getX(dat, "pm")
 	y<-getY(dat, "pm")
 	area <-  max(x) * max(y)
-	numProbes <- nrow(pm(dat))
+	numProbes <- length(pmindex(dat))
 	probeDensity <- numProbes/area
 	blockSize <- round(sqrt(probesPerBlock/probeDensity))
 	return(blockSize)
 }
-
 
 max.density <- function(x, n.pts = 2^14, min.points=30) { # From affy
         if (length(x) >= min.points) {
@@ -844,9 +861,14 @@ max.density <- function(x, n.pts = 2^14, min.points=30) { # From affy
         }
 }
 
+
+##############
+## bgAdjust ##
+##############
+
 # Calculate RMA bg parameters using the GC-stratitifed RMA model 
 # with background probes
-bgParametersBgp <- function (pm, bgpm, Ngc, bgNgc, n.pts = 2^14) 
+bgAdjustParameters <- function (pm, bgpm, Ngc, bgNgc, n.pts = 2^14) 
 {
     pmbg <- max.density(bgpm, n.pts)
     pmbg.gc <- tapply(bgpm, bgNgc, max.density, n.pts) # Get mode for each GC bin
@@ -866,39 +888,433 @@ bgParametersBgp <- function (pm, bgpm, Ngc, bgNgc, n.pts = 2^14)
     list(alpha = alpha, mu = mubg, mu.gc = mubg.gc, sigma = bgsd)
 }
 
-
-# Adjust background using the RMA model with background probes
-bgAdjustBgp <- function (dat) {
-	pms <- pm(dat)
-	bgs <- bg(dat)
-    Ngc <- countGC(dat, "pm")
-    bgNgc <- countGC(dat, "bg")
-	for (samp in 1:ncol(pms)) {
-    	for (chan in 1:2) {
-            param <- bgParametersBgp(pms[,samp,chan], bgs[,samp,chan], Ngc, bgNgc, n.pts=2^14)
-            b <- param$sigma
-            pms[,samp,chan] <- pms[,samp,chan] - param$mu.gc[Ngc] - param$alpha * b^2
-            pms[,samp,chan] <- pms[,samp,chan] + b * ((1/sqrt(2 * pi)) * exp((-1/2) * ((pms[,samp,chan]/b)^2)))/pnorm(pms[,samp,chan]/b)
-            bgs[,samp,chan] <- bgs[,samp,chan] - param$mu.gc[bgNgc] - param$alpha * b^2
-            bgs[,samp,chan] <- bgs[,samp,chan] + b * ((1/sqrt(2 * pi)) * exp((-1/2) * ((bgs[,samp,chan]/b)^2)))/pnorm(bgs[,samp,chan]/b)
+bgAdjustAtom <- function(x, pmIndex, bgIndex, ngc, bgNgc) {
+	#cat("In bgAdjustAtom\n")
+	for (i in 1:ncol(x)){
+		pms <- x[pmIndex,i]
+		bgs <- x[bgIndex,i]
+		param <- bgAdjustParameters(pms, bgs, ngc, bgNgc)
+        b <- param$sigma
+        pms <- pms - param$mu.gc[ngc] - param$alpha * b^2
+        pms <- pms + b * ((1/sqrt(2 * pi)) * exp((-1/2) * ((pms/b)^2)))/pnorm(pms/b)
+        bgs <- bgs - param$mu.gc[bgNgc] - param$alpha * b^2
+        bgs <- bgs + b * ((1/sqrt(2 * pi)) * exp((-1/2) * ((bgs/b)^2)))/pnorm(bgs/b)
+		isInf <- which(is.infinite(pms))
+		if (length(isInf)>0) {
+			biggest <- max(pms[-isInf], na.rm=TRUE)		
+			pms[isInf] <- biggest
 		}
+		isInf <- which(is.infinite(bgs))
+		if (length(isInf)>0) {
+			biggest <- max(bgs[-isInf], na.rm=TRUE)		
+			bgs[isInf] <- biggest
+		}
+		x[pmIndex,i] <- pms
+		x[bgIndex,i] <- bgs
 	}
-	isInf <- which(is.infinite(pms))
-	if (length(isInf)>0) {
-		biggest <- max(pms[-isInf], na.rm=TRUE)		
-		pms[isInf] <- biggest
-	}
-	isInf <- which(is.infinite(bgs))
-	if (length(isInf)>0) {
-		biggest <- max(bgs[-isInf], na.rm=TRUE)		
-		bgs[isInf] <- biggest
-	}
-   	pm(dat) <- pms
-    bg(dat) <- bgs
-    return(dat)
+	return(x)
+}
+
+bgAdjust <- function(dat, copy=TRUE) {
+	pmIndex <- pmindex(dat)
+	bgIndex <- bgindex(dat)
+    ngc <- countGC(dat, "pm")
+    bgNgc <- countGC(dat, "bg")
+	c1 <- assayDataElement(dat, "channel1")
+	c2 <- assayDataElement(dat, "channel2")
+	c1 <- oApply(c1, copy=copy, fn=bgAdjustAtom, pmIndex=pmIndex, 
+		bgIndex=bgIndex, ngc=ngc, bgNgc=bgNgc)
+	c2 <- oApply(c2, copy=copy, fn=bgAdjustAtom, pmIndex=pmIndex, 
+		bgIndex=bgIndex, ngc=ngc, bgNgc=bgNgc)	
+	assayDataElement(dat, "channel1") <- c1
+	assayDataElement(dat, "channel2") <- c2	
+	return(dat)
 }
 
 
+############################
+## normalizeWithinSamples ##
+############################
+normalizeWithinSamples <- function (dat, copy=TRUE, method = "loess",
+ 	scale = c(0.99, 0.99), 
+	controlProbes = c("CONTROL_PROBES", "CONTROL_REGIONS"), 
+	controlIndex = NULL, approx = TRUE, breaks = 1000, 
+    verbose = FALSE) 
+{
+    if (grepl("gc", method)) {
+        mAdj <- diffAmpEstGC(dat, method = method, controlProbes = controlProbes)
+        dat <- diffAmpAdjustGC(dat, mAdj)
+    }
+    if (grepl("loess", method)) {
+        dat <- normalizeLoess(dat, copy=copy, controlIndex = controlIndex, 
+            controlProbes = controlProbes, approx = approx, breaks = breaks)
+		#gc()
+    }
+    if (grepl("median", method)) {
+        if (is.null(controlIndex)) {
+            controlIndex <- getControlIndex(dat, controlProbes = controlProbes)
+        }
+        datPm <- log2(pm(dat))
+        M <- datPm[, , "channel1"] - datPm[, , "channel2"]
+        mCtrl <- M[controlIndex, ]
+        mAdj <- apply(mCtrl, 2, median, na.rm = TRUE)
+        datPm[, , "channel2"] <- sweep(datPm[, , "channel2"], 
+            2, mAdj, FUN = "+")
+        pm(dat) <- 2^datPm
+    }
+    dat <- scaleSamples(dat, copy=copy, scale=scale)
+	gc()
+    return(dat)
+}
+
+normalizeLoessAtom <- function(c1, c2, controlIndex, span, approx, breaks, 
+		by, pmIndex) {
+	for (i in 1:ncol(c1)) {
+		lc1 <- log2(c1[pmIndex,i])
+		lc2 <- log2(c2[pmIndex,i])
+		y <- lc1-lc2
+		if (by=="tot") {
+			x <- lc2
+		} else if (by=="A") {
+			x <- (lc1+lc2)/2
+		}
+		fit <- loess(y ~ x, subset = controlIndex,
+               na.action = na.exclude, degree=1, surface = "direct",
+ 			   span=span)
+		adj <- predictLoess(fit, newdata=x, approx=approx, breaks=breaks)
+		c2[pmIndex,i] <- 2^(lc2 + adj)
+	}
+	return(list(c1, c2))
+}
+
+
+predictLoess <- function(fit, newdata, approx=TRUE, breaks=1000) {
+	if (approx) {
+		newdataBin <- cut(newdata, breaks=breaks, ordered.result=TRUE)
+		binMean <- tapply(newdata, newdataBin, mean)
+		isNa <- which(is.na(binMean))
+		adj <- rep(NA, length(binMean))
+		if (length(isNa)==0) {
+			adj <- predict(fit, newdata = binMean)
+		} else {
+			adj[-isNa] <- predict(fit, newdata = binMean[-isNa])
+		}
+		ret <- adj[newdataBin]
+	} else {
+		ret <- predict(fit, newdata=newdata)
+	}
+	return(ret)
+}
+
+normalizeLoess <- function(dat, copy=TRUE, controlIndex=NULL, 
+		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), span=0.3,
+		by="A", approx=TRUE, breaks=1000) {
+	if (is.null(controlIndex)) {
+    	controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
+	}
+	pmIndex=pmindex(dat)
+	c1 <- assayDataElement(dat, "channel1")
+	c2 <- assayDataElement(dat, "channel2")
+	ret <- oApply(c1, c2, copy=copy, fn=normalizeLoessAtom, 
+			controlIndex=controlIndex, span=span, approx=approx,
+			breaks=breaks, by=by, pmIndex=pmIndex)
+	assayDataElement(dat, "channel1") <- ret[[1]]
+	assayDataElement(dat, "channel2") <- ret[[2]]
+	return(dat)
+}
+
+scaleSamplesAtom <- function(c1, c2, copy, scale, pmIndex) {
+	lc1 <- log2(c1[pmIndex,,drop=FALSE])
+	lc2 <- log2(c2[pmIndex,,drop=FALSE])
+	M <- lc1-lc2
+	x <- apply(M, 2, quantile, scale[1], na.rm=TRUE)
+	adj <- x / -log(1-scale[2])
+	M <- sweep(M, 2, adj, FUN="/")
+	c2[pmIndex,] <- 2^(lc1-M)
+	return(list(c1,c2))
+}
+	
+scaleSamples <- function(dat, copy=TRUE, scale=c(0.99, 0.99)) {
+	if (length(scale)==2) {
+		pmIndex=pmindex(dat)
+		c1 <- assayDataElement(dat, "channel1")
+		c2 <- assayDataElement(dat, "channel2")
+		ret <- oApply(c1, c2, copy=copy, fn=scaleSamplesAtom, scale=scale, 
+			pmIndex=pmIndex)
+		assayDataElement(dat, "channel1") <- ret[[1]]
+		assayDataElement(dat, "channel2") <- ret[[2]]
+		return(dat)
+	}
+}
+
+#########
+## SQN ##
+#########
+mix.qn <- function (y, log2=FALSE, ctrl.id, idx, NQ, mix.param, 
+		max.q = 0.95, low) {
+	if(missing(idx)) idx <- 1:nrow(y)
+	if(log2) y <- log2(y)
+	if (!is.matrix(y)) y <- as.matrix(y)
+	ret <- y
+	for (i in 1:ncol(y)) {
+		y0 <- y[idx, i]
+	    ECDF = ecdf(y0[ctrl.id])
+	    Q = ECDF(y0)
+	    id0 = which(Q < 0.05)
+	    id2 = which(Q > max.q)
+	    B = length(id2)
+	    Q2 = max.q + (1 - max.q) * (1:B)/(B + 1)
+	    y2o = order(y0[id2])
+	    Q[id2][y2o] = Q2
+	    ynorm = vector(mode = "numeric", length = length(y0))
+	    ynorm[id0] = low
+	    ynorm[-c(id0, id2)] = quantile(NQ, Q[-c(id0, id2)])
+	    ynorm[id2] = qnorMix(Q[id2], mix.param)
+		y[idx,i] <- ynorm
+ 	}
+	if(log2) y <- 2^y
+	return(y)
+}
+
+SQNff <- function (y, copy=TRUE, log2=FALSE, N.mix = 5, ctrl.id, idx,
+		model.weight = 0.9) {
+	if(missing(idx)) idx <- 1:nrow(y)
+	ctrl <- y[idx[ctrl.id], ]
+	if(log2) ctrl <- log2(ctrl)		
+    QE = apply(ctrl, 2, sort)
+    QN = apply(QE, 1, median)
+    mix.param = Mclust(QN, G = N.mix)$parameters
+    mix.param = norMix(mu = mix.param$mean, sig2 = mix.param$variance$sigmasq, 
+        w = mix.param$pro)
+    qq = seq(1/(2 * length(QN)), 1 - 1/(2 * length(QN)), 1/length(QN))
+    qq = qnorMix(qq, mix.param)
+    QN1 = QN * (1 - model.weight) + qq * model.weight
+	if ("ff_matrix" %in% class(y)) { 
+		ynorm = oApply(y, copy=copy, fn=mix.qn, log2=log2,
+			ctrl.id=ctrl.id, idx=idx, NQ = QN1, mix.param = mix.param, 
+        	max.q = 0.95, low = quantile(QN1, 0.05))
+    } else {
+		if (log2) y <- log2(y)
+		ynorm = apply(y, 2, mix.qn, ctrl.id=ctrl.id, idx=idx, NQ = QN1, 
+			mix.param = mix.param, 
+        	max.q = 0.95, low = quantile(QN1, 0.05))
+		if (log2) ynorm <- 2^ynorm
+	}
+	return(ynorm)
+}		
+
+#############################	
+## normalizeBetweenSamples ##
+#############################	
+
+normalizeBetweenSamples <- function(dat, copy=TRUE,
+		m="allQuantiles", untreated="none", enriched="none", 
+		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), 
+		controlIndex=NULL, verbose=FALSE) {    
+	if(ncol(dat)>1) {
+
+		c1 <- assayDataElement(dat, "channel1")
+		c2 <- assayDataElement(dat, "channel2")
+	    if (copy & "ff_matrix" %in% class(c1)) {
+			open(c1)
+			open(c2)
+	        c1 <- clone(c1, pattern = file.path(ldPath(), "cloned-"))
+			c2 <- clone(c2, pattern = file.path(ldPath(), "cloned-"))
+	    }
+
+		if (m %in% c("quantile", "allQuantiles")){
+			assayDataElement(dat, "channel1") <- c1
+			assayDataElement(dat, "channel2") <- c2
+			dat <- quantileNormalize(dat, copy=FALSE, idx=pmindex(dat))
+			c1 <- assayDataElement(dat, "channel1") 
+			c2 <- assayDataElement(dat, "channel2") 
+		}
+
+	    ## Normalize untreated (leaving M unchanged)
+	    if (untreated=="complete") { # TODO: parallelize
+	       	if ("ff_matrix" %in% class(c1)) {
+				open(c1)
+				open(c2)
+				batchSize <- ocSamples()*nrow(c1)/ncol(c1)
+				med<-ffrowapply(rowMedians(log2(c1[i1:i2,,drop=FALSE])),
+				 	X=c1, RETURN=TRUE, CFUN="c", BATCHSIZE=batchSize) 	
+			} else {
+				med <- rowMedians(log2(c1))
+			}
+			M <- getM(dat)
+			if ("ff_matrix" %in% class(M)) open(M)
+			for (i in 1:ncol(M)) {
+				c1[,i] <- 2^med
+				c2[,i] <- 2^(med - M[,i])
+			}
+	    }
+	    ## Normalize enriched 
+		if (enriched=="sqn") {
+			if(is.null(controlIndex)) 	
+				controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
+			c2 <- SQNff(y=c2, copy=FALSE, log2=TRUE, 
+				ctrl.id=controlIndex, idx=pmindex(dat))
+			gc()	
+		}
+		assayDataElement(dat, "channel1") <- c1
+		assayDataElement(dat, "channel2") <- c2
+	}
+	return(dat)
+} 
+
+
+##############
+## quantile ##
+##############
+
+setGeneric("quantileNormalize", function(object, copy, idx)	{
+		if (missing(copy)) copy <- TRUE
+		if (missing(idx)) idx <- 1:nrow(object)	
+		standardGeneric("quantileNormalize")	
+	})
+
+setMethod("quantileNormalize", c(object="matrix"),
+	function (object, copy, idx) {
+		object[idx,] <- normalize.quantiles(object[idx,], copy=copy)
+		return(object)
+	})
+
+setMethod("quantileNormalize", c(object="ff_matrix"),
+	function (object, copy, idx) {
+		samplesByNode <- splitIndicesByNode(1:ncol(object))
+	    stats <- ocLapply(samplesByNode, qnTargetStatsNode, object, idx)
+	    totalN <- sum(sapply(stats, "[[", "n"))
+	    total <- rowSums(sapply(stats, "[[", "total"))
+	    target <- total/totalN
+	    oApply(object, copy=copy, fn=qnToTargetAtom, 
+			target=target, idx=idx)
+	})
+
+setMethod("quantileNormalize", c(object="TilingFeatureSet"),
+	function (object, copy, idx) {
+		M <- getM(object)
+		M <- quantileNormalize(M, copy=FALSE, idx=idx)	
+		c1 <- assayDataElement(object, "channel1")
+		if (copy & "ff_matrix" %in% class(c1)) {
+			c1 <- clone(c1, pattern = file.path(ldPath(), 
+			"cloned-"))
+		}
+		fn <- function(x) 2^x
+		c2 <- combine(c1, M, "-", transform1="log2", invTransform=fn)
+		assayDataElement(object, "channel1") <- c1
+		assayDataElement(object, "channel2") <- c2
+		return(object)
+	})
+
+
+setGeneric("qnTargetStatsNode", function(cols, object, idx)
+	standardGeneric("qnTargetStatsNode"))
+
+setMethod("qnTargetStatsNode", c(cols="integer", object="matrix", idx="integer"), 
+	function(cols, object, idx) {
+	    total <- rep(0, length(idx))
+	    if (length(cols) > 0) {
+	        for (i in cols) total <- total + sort(object[idx, i])
+	    }
+	    list(total = total, n = length(cols))
+	})
+
+setMethod("qnTargetStatsNode", c(cols="integer", object="ff_matrix",
+ 		idx="integer"), 
+	function(cols, object, idx) {
+	    open(object)
+	    total <- rep(0, length(idx))
+	    if (length(cols) > 0) {
+	        for (i in cols) total <- total + sort(object[idx, i], na.last=TRUE)
+	    }
+	    close(object)
+	    rm(object)
+	    list(total = total, n = length(cols))
+	})
+
+qnToTargetAtom <- function (object, target, idx) {
+	object[idx,] <- normalize.quantiles.use.target(object[idx,,drop=FALSE], 
+		target, copy=FALSE)
+	return(object)
+}
+
+
+#############
+## combine ##
+#############
+
+setGeneric("combine", function(object1, object2, fun, 
+		transform1, transform2, invTransform, ...)	{
+	if (missing(fun)) fun <- "+"
+	if (missing(transform1)) transform1 <- NULL
+	if (missing(transform2)) transform2 <- NULL
+	if (missing(invTransform)) invTransform <- NULL
+	standardGeneric("combine")	
+})
+
+setMethod("combine", "matrix", 
+	function(object1, object2, fun, 
+			transform1, transform2, invTransform, returnList=FALSE) {
+		if (!is.null(transform1)) object1 <- do.call(transform1, list(object1))
+		if (!is.null(transform2)) object2 <- do.call(transform2, list(object2))
+		ret <- do.call(fun, list(object1, object2))
+		if (!is.null(invTransform)) ret <- do.call(invTransform, list(ret))
+		if (returnList) {
+			return(list(ret, NULL))
+		} else {
+			return(ret)
+		}
+	})
+
+setMethod("combine", "ff_matrix", 
+	function(object1, object2, fun, transform1, transform2, invTransform) {
+		oApply(object1, object2, copy=TRUE, fun=fun,
+			fn=combine, transform1=transform1,
+			transform2=transform2, invTransform=invTransform,
+			returnList=TRUE)[[1]]
+		})
+		
+
+
+#################
+## methPercent ##
+#################
+methPercent <- function(m, pmIndex, ngc, commonParams=TRUE) {
+	if(missing(pmIndex)) pmIndex <- 1:nrow(m)
+	if (is.null(dim(m))) m <- as.matrix(m)
+	## TODO: add parallel support 
+	if ("ff_matrix" %in% class(m)) {
+		open(m)
+		ret <- ff(vmode="double", dim=c(length(pmIndex), ncol(m)),
+			pattern=file.path(ldPath(), "methPercent-"))
+	} else {
+		ret <- matrix(nrow=length(pmIndex), ncol=ncol(m))
+	}
+	param <- t(sapply(1:ncol(m), 
+		function(i) logmethParameters(m[pmIndex,i], ngc)))
+	alpha <- unlist(param[,"alpha"])
+	sigma <- unlist(param[,"sigma"])
+	if(commonParams) {
+		alpha[] <- median(alpha)
+		sigma[] <- median(sigma)
+	}
+	for (i in 1:ncol(m)) {
+		x <- m[pmIndex,i]
+		a <- alpha[i]
+		b <- sigma[i]
+		mu <- 0
+        f0 <- dnorm(x, mean=0, sd=b)
+        f1 <- a * exp(0.5*a^2*b^2-a*x) * (pnorm((x-a*b^2)/b))
+        p0.prior <- sum(x<0, na.rm=TRUE) / sum(!is.na(x))
+        p0 <- (p0.prior*f0) / ((p0.prior*f0) + ((1-p0.prior)*f1))
+        p1 <- 1-p0
+        x <- x - mu - a * b^2
+        postM <- p1 * (x + b * ((1/sqrt(2 * pi)) * exp((-1/2) * ((x/b)^2)))/pnorm(x/b))
+		ret[,i] <- 1-2^(-postM)
+   	}
+	colnames(ret) <- colnames(m)
+	return(ret)
+}
 
 ##Assume the signal is S=X+Y where X~Normal(0, s2) and Y~Exp(alpha)
 ## Calculate E(Y|S)
@@ -926,35 +1342,6 @@ logmethParameters <- function (pm, ngc, n.pts = 2^14)
     list(alpha = alpha, mu = mubg, sigma = bgsd)
 }
 
-
-methPercent <- function(m, ngc, commonParams=TRUE) {
-	m <- as.matrix(m)
-	param <- t(sapply(1:ncol(m), 
-		function(i) logmethParameters(m[,i], ngc)))
-	alpha <- unlist(param[,"alpha"])
-	sigma <- unlist(param[,"sigma"])
-	if(commonParams) {
-		alpha[] <- median(alpha)
-		sigma[] <- median(sigma)
-	}
-
-	ret <- sapply(1:ncol(m), function(i) {
-		x <- m[,i]
-		a <- alpha[i]
-		b <- sigma[i]
-		mu <- 0
-        f0 <- dnorm(x, mean=0, sd=b)
-        f1 <- a * exp(0.5*a^2*b^2-a*x) * (pnorm((x-a*b^2)/b))
-        p0.prior <- sum(x<0, na.rm=TRUE) / sum(!is.na(x))
-        p0 <- (p0.prior*f0) / ((p0.prior*f0) + ((1-p0.prior)*f1))
-        p1 <- 1-p0
-        x <- x - mu - a * b^2
-        postM <- p1 * (x + b * ((1/sqrt(2 * pi)) * exp((-1/2) * ((x/b)^2)))/pnorm(x/b))
-		1-2^(-postM)
-   	})
-	colnames(ret) <- colnames(m)
-	return(ret)
-}
 
 
 
@@ -1175,7 +1562,9 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
       if(length(unique(lens))!=1)
         stop("p, l, chr, pos, and/or pns are incompatible.")
       stopifnot(length(groups)==max(ncol(p), ncol(l)))
-	  index <- which(!is.na(chr) & !is.na(pos) & !is.na(pns))
+	  chrpos <- paste(chr, pos)
+	  dup <- duplicated(chrpos) | duplicated(chrpos, fromLast = TRUE)
+	  index <- which(!is.na(chr) & !is.na(pos) & !is.na(pns) & !dup)
       index=index[order(chr[index],pos[index])]
       chr=chr[index]
       pos=pos[index]
@@ -1190,12 +1579,14 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
 	  class(pdInfo)="TilingFeatureSet" # Trick oligo so that pmChr, pmPosition, probeNames work
 	  chr=pmChr(pdInfo)
 	  pos=pmPosition(pdInfo)
+	  chrpos <- paste(chr, pos)
+	  dup <- duplicated(chrpos) | duplicated(chrpos, fromLast = TRUE)
 	  if (!is.null(l)) {
-		index=which(rowSums(is.na(l))==0)	
+		index=which(rowSums(is.na(l))==0 & !dup)	
         index=index[order(chr[index],pos[index])]
 		l=l[index,]
 	  } else {
-		index=which(rowSums(is.na(p))==0)			
+		index=which(rowSums(is.na(p))==0 & !dup)	
         index=index[order(chr[index],pos[index])]
         p=p[index,]
 	  }
@@ -1226,12 +1617,14 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
 	  }
       chr=pmChr(eset)
       pos=pmPosition(eset)
+	  chrpos <- paste(chr, pos)
+	  dup <- duplicated(chrpos) | duplicated(chrpos, fromLast = TRUE)
 	  if (!is.null(l)) {
-		index=which(rowSums(is.na(l))==0)	
+		index=which(rowSums(is.na(l))==0 & !dup)	
         index=index[order(chr[index],pos[index])]
 		l=l[index,]
 	  } else {
-		index=which(rowSums(is.na(p))==0)			
+		index=which(rowSums(is.na(p))==0 & !dup)			
         index=index[order(chr[index],pos[index])]
         p=p[index,]
 	  }
@@ -1339,7 +1732,7 @@ dmrFdr <- function(dmr, compare=1, numPerms=1000, seed=NULL, verbose=TRUE) {
 	if (length(compare)!=1) stop("You must choose one comparison at a time when calculating FDRs. Please set dmr to be one of: ", 
 	paste(names(dmr$tabs), collapse=", "), "\n")
 	if (is.numeric(compare)) compare <- names(dmr$tabs)[compare]
-	message("Calculating q-values for DMRs between", compare, "\n")
+	message("Calculating q-values for DMRs between ", compare, "\n")
 	# Get probe order from TilingFeatureSet object
 	pdInfo=get(dmr$package)
 	class(pdInfo)="TilingFeatureSet" # Trick oligo so that pmChr, pmPosition work
@@ -1532,5 +1925,8 @@ validatePd <- function(pd, fileNameColumn, sampleNameColumn,
 
 
 .onAttach <- function(libname, pkgname) {
- message("Welcome to charm version ", packageDescription("charm", field="Version"))
+	message("Welcome to charm version ", 
+		packageDescription("charm", field="Version"))
+	ocSamples(1)
+	ldPath(tempdir())
 }

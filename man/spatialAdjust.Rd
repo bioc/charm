@@ -7,13 +7,15 @@ Correct spatial artifacts
 Remove spatial artifacts from microarray data stored in TilingFeatureSet objects
 }
 \usage{
-spatialAdjust(dat, blockSize, theta = 1)
+spatialAdjust(dat, copy=TRUE, blockSize, theta = 1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{dat}{
 TilingFeatureSet
 }
+  \item{copy}{
+Only relevant when using disk-backed objects. If TRUE a copy will be made leaving the original object (dat) unchanged. The input object will not be preserved if copy=FALSE}
   \item{blockSize}{
 The array is divided into a series of blockSize x blockSize rectangular blocks and the average signal level calculated for each. If blockSize is unspecified a size is chosen that gives about 1250 probes per block. 
 }

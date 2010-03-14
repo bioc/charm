@@ -7,7 +7,8 @@ Within-sample normalization for two-color data
 Within-sample (between-channel) normalization for two-color DNA methylation microarray data.
 }
 \usage{
-normalizeWithinSamples(dat, method = "loess", scale=c(0.99, 0.99), 
+normalizeWithinSamples(dat, copy=TRUE, 
+	method = "loess", scale=c(0.99, 0.99), 
 	controlProbes = c("CONTROL_PROBES", "CONTROL_REGIONS"), 
 	controlIndex = NULL, approx=TRUE, breaks=1000, verbose=FALSE)
 }
@@ -16,6 +17,8 @@ normalizeWithinSamples(dat, method = "loess", scale=c(0.99, 0.99),
   \item{dat}{
 a TilingFeatureSet
 }
+  \item{copy}{
+Only relevant when using disk-backed objects. If TRUE a copy will be made leaving the original object (dat) unchanged. The input object will not be preserved if copy=FALSE}
   \item{method}{
 normalization method. "loess" or "none"
 }

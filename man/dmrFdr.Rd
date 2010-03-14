@@ -42,11 +42,13 @@ Martin Aryee <aryee@jhu.edu>
 }
 \examples{
 	if (require(charmData) & require(BSgenome.Hsapiens.UCSC.hg18)) {
+		phenodataDir <- system.file("extdata", package="charmData")
+		pd <- read.delim(file.path(phenodataDir, "phenodata.txt"))
+		pd <- subset(pd, tissue \%in\% c("liver", "colon"))
+		# Validate format of sample description file		
+		res <- validatePd(pd)
 		dataDir <- system.file("data", package="charmData")
 		setwd(dataDir)
-		# Validate format of sample description file		
-		pd <- read.delim("phenodata.txt")
-		res <- validatePd(pd)
 		# Read in raw data
 		rawData <- readCharm(files=pd$filename, sampleKey=pd)
 		# Find non-CpG control probes
@@ -56,7 +58,7 @@ Martin Aryee <aryee@jhu.edu>
 		# Find differentially methylated regions
 		grp <- pData(rawData)$tissue
 		dmr <- dmrFinder(rawData, p=p, groups=grp, 
-			compare=c("liver", "spleen"), cutoff=0.95)
+			compare=c("liver", "colon"), cutoff=0.95)
 		head(dmr$tabs[[1]])
 		# Estimate false discovery rate for DMRs
 		dmr <- dmrFdr(dmr, numPerms=3, seed=123) 

@@ -32,10 +32,11 @@ Martin Aryee <aryee@jhu.edu>
 }
 \examples{
 	if (require(charmData)) {
+		phenodataDir <- system.file("extdata", package="charmData")
+		pd <- read.delim(file.path(phenodataDir, "phenodata.txt"))
+		pd <- subset(pd, sampleID=="441_liver")
 		dataDir <- system.file("data", package="charmData")
 		setwd(dataDir)
-		pd <- read.delim("phenodata.txt")
-		pd <- subset(pd, sampleID=="441_liver")
 		rawData <- readCharm(files=pd$filename, sampleKey=pd)
 		ngc <- countGC(rawData)
 		head(ngc)
