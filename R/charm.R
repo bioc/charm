@@ -366,6 +366,7 @@ plotDensityMat <- function (x, idx, main = NULL,
 	if (missing(idx)) idx <- 1:nrow(x)
 	if ("matrix" %in% class(x)) d <- apply(x[idx,], 2, density, na.rm = TRUE)
 	if ("ff_matrix" %in% class(x)) {
+		i1<-i2<-NULL # To avoid R CMD CHECK "no visible binding" warning
 		d <- ffcolapply(density(x[idx,i1:i2], na.rm=TRUE), X=x, 
 			BATCHSIZE=1, BATCHBYTES=2^30, RETURN=TRUE, CFUN="list")
 	}
@@ -545,7 +546,7 @@ cpgdensity <-function(subject, chr, pos, windowSize=500, sequence="CG") {
     for (curchr in (names(idx))) {
             if (curchr %in% names(subject)) {
                 chrseq <- subject[[curchr]]
-				if (inherits(chrseq, "DNAString")) {
+				if (inherits(chrseq, "DNAString") | inherits(chrseq, "MaskedDNAString")){
 	                curpos <- pos[idx[[curchr]]]
 	                v <- suppressWarnings(Views(chrseq, start=curpos-windowSize/2, end=curpos+windowSize/2))
 	                d <- suppressWarnings(DNAStringSet(v))
@@ -1136,6 +1137,7 @@ normalizeBetweenSamples <- function(dat, copy=TRUE,
 				open(c1)
 				open(c2)
 				batchSize <- ocSamples()*nrow(c1)/ncol(c1)
+				i1<-i2<-NULL # To avoid R CMD CHECK "no visible binding" warning
 				med<-ffrowapply(rowMedians(log2(c1[i1:i2,,drop=FALSE])),
 				 	X=c1, RETURN=TRUE, CFUN="c", BATCHSIZE=batchSize) 	
 			} else {
