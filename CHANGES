@@ -1,3 +1,7 @@
+v0.99.9
+methp: now returns M only for pm probes
+getM: added rows option
+
 v0.99.8
 cpgdensity: fixed bug causing only NAs to be returned
 

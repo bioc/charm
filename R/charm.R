@@ -118,19 +118,22 @@ setMethod("nodeFn", c("integer", "ff_matrix"),
 setGeneric("getM", function(object1, ...) standardGeneric("getM"))
 
 setMethod("getM", "TilingFeatureSet", 
-	function(object1) {
+	function(object1, rows) {
 		c1 <- assayDataElement(object1, "channel1")
 		c2 <- assayDataElement(object1, "channel2")
-		getM(c1, c2)
+		if(missing(rows)) rows <- 1:nrow(c1)
+		getM(c1, c2, rows)
 	})
 
 setMethod("getM", "matrix", 
-	function(object1, object2) log2(object1)-log2(object2))
+	function(object1, object2, rows) log2(object1[rows,])-log2(object2[rows,]))
 
 setMethod("getM", "ff_matrix", 
-	function(object1, object2) {
+	function(object1, object2, rows) {
 		ret <- oApply(object1=object1, object2=object2, copy=TRUE, 
-			fn=function (object1, object2) list(log2(object1)-log2(object2), NULL))
+			fn=function (object1, object2, rows)
+			 	list(log2(object1[rows,])-log2(object2[rows,]), NULL),
+			rows=rows)
 		ret[[1]]	
 	})	
 
@@ -239,7 +242,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 	}		
 
 	if (returnM=="TRUE") {
-		retval <- getM(dat)	
+		retval <- getM(dat, rows=pmindex(dat))	
 	} else {
 	    if (verbose) message("Estimating percentage methylation")
      	retval <- methPercent(m=getM(dat), pmIndex=pmindex(dat),
