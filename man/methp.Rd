@@ -11,7 +11,8 @@ Estimate DNA methylation from McrBC/CHARM microarray data in terms of log-ratios
 methp(dat, spatial = TRUE, bgSubtract = TRUE, withinSampleNorm = "loess", 
 	scale = c(0.99, 0.99), betweenSampleNorm = "quantile", 
 	controlProbes = c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-	controlIndex = NULL, commonMethPercentParams = NULL, 
+	controlIndex = NULL, excludeIndex = NULL,
+	commonMethPercentParams = NULL, 
 	verbose = TRUE, returnM = FALSE, 
 	plotDensity = NULL, plotDensityGroups = NULL)
 }
@@ -41,6 +42,9 @@ character string of the label assigned to non-CpG control probes in the annotati
 }
   \item{controlIndex}{
 a vector of non-CpG control probe indices
+}
+  \item{excludeIndex}{
+a vector of probes to ignore when creating between-sample normalization target distributions. 
 }
   \item{commonMethPercentParams}{
 boolean indicating whether a common set of parameters should be used for all samples when converting M-values to percentage methylation.

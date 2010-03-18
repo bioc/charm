@@ -11,7 +11,7 @@ Between-sample normalization for two-color DNA methylation microarray data.
 normalizeBetweenSamples	(dat, copy=TRUE, 
 	m="allQuantiles", untreated="none", enriched="none", 
 	controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-	controlIndex=NULL, verbose=FALSE)
+	controlIndex=NULL, excludeIndex=NULL, verbose=FALSE)
 }
 
 \arguments{
@@ -35,6 +35,9 @@ character string of the label assigned to non-CpG control probes in the annotati
 }
   \item{controlIndex}{
 a vector of non-CpG control probe indices
+}
+  \item{excludeIndex}{
+a vector of probes to ignore when creating normalization target distributions. 
 }
   \item{verbose}{
 boolean: Verbose output?

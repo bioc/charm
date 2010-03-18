@@ -159,7 +159,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		scale=c(0.99, 0.99),
 		betweenSampleNorm="quantile", 
 		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"),
-		controlIndex=NULL, 
+		controlIndex=NULL, excludeIndex=NULL,
 		commonMethPercentParams=NULL,
 		verbose=TRUE, returnM=FALSE, 
 		plotDensity=NULL, plotDensityGroups=NULL) {
@@ -234,7 +234,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
     dat <- normalizeBetweenSamples(dat, copy=FALSE,
 		m=bs$m, untreated=bs$untreated, enriched=bs$enriched,
 		controlProbes=controlProbes, controlIndex=controlIndex,
-		verbose=verbose)
+		excludeIndex=excludeIndex, verbose=verbose)
 	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="4. After between-sample norm",
@@ -1114,7 +1114,7 @@ SQNff <- function (y, copy=TRUE, log2=FALSE, N.mix = 5, ctrl.id, idx,
 normalizeBetweenSamples <- function(dat, copy=TRUE,
 		m="allQuantiles", untreated="none", enriched="none", 
 		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-		controlIndex=NULL, verbose=FALSE) {    
+		controlIndex=NULL, excludeIndex=NULL, verbose=FALSE) {    
 	if(ncol(dat)>1) {
 
 		c1 <- assayDataElement(dat, "channel1")
@@ -1129,7 +1129,8 @@ normalizeBetweenSamples <- function(dat, copy=TRUE,
 		if (m %in% c("quantile", "allQuantiles")){
 			assayDataElement(dat, "channel1") <- c1
 			assayDataElement(dat, "channel2") <- c2
-			dat <- quantileNormalize(dat, copy=FALSE, idx=pmindex(dat))
+			dat <- quantileNormalize(dat, copy=FALSE, 
+				idx=setdiff(pmindex(dat), excludeIndex))
 			c1 <- assayDataElement(dat, "channel1") 
 			c2 <- assayDataElement(dat, "channel2") 
 		}
@@ -1158,7 +1159,8 @@ normalizeBetweenSamples <- function(dat, copy=TRUE,
 			if(is.null(controlIndex)) 	
 				controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
 			c2 <- SQNff(y=c2, copy=FALSE, log2=TRUE, 
-				ctrl.id=controlIndex, idx=pmindex(dat))
+				ctrl.id=controlIndex, 
+				idx=setdiff(pmindex(dat), excludeIndex))
 			gc()	
 		}
 		assayDataElement(dat, "channel1") <- c1
@@ -1285,8 +1287,8 @@ setMethod("combine", "ff_matrix",
 ## methPercent ##
 #################
 methPercent <- function(m, pmIndex, ngc, commonParams=TRUE) {
-	if(missing(pmIndex)) pmIndex <- 1:nrow(m)
 	if (is.null(dim(m))) m <- as.matrix(m)
+	if(missing(pmIndex)) pmIndex <- 1:nrow(m)
 	## TODO: add parallel support 
 	if ("ff_matrix" %in% class(m)) {
 		open(m)
@@ -1773,8 +1775,12 @@ dmrFdr <- function(dmr, compare=1, numPerms=1000, seed=NULL, verbose=TRUE) {
 
 	## Reshuffled group label DMRs
 	if (!is.null(seed)) set.seed(seed)
-	s <- sample(1:maxPerms, numPerms)
-	grp1 <- combinations(n,n1)[s,]
+	if (maxPerms<1e6) { # Enumerate all the combinations
+		s <- sample(1:maxPerms, numPerms)
+		grp1 <- combinations(n,n1)[s,]
+	} else { 
+		grp1 <- t(sapply(1:numPerms, function(x) sample(n,n1)))
+	}
 
 	if (verbose) message("Finding permuted data DMRs. Estimating time remaining")
 	areas <- lapply(1:numPerms, function(i) {

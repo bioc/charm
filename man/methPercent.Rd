@@ -48,7 +48,6 @@ Martin Aryee <aryee@jhu.edu>
 		m <- methp(rawData, controlIndex=ctrlIdx, returnM=TRUE)
 		# Estimate percentage methylation
 		ngc <- countGC(rawData)
-		pmIndex <- pmindex(rawData)
-		p <- methPercent(m, pmIndex=pmIndex, ngc=ngc)
+		p <- methPercent(m, ngc=ngc)
 	}
 }
