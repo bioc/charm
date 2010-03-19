@@ -1125,12 +1125,17 @@ normalizeBetweenSamples <- function(dat, copy=TRUE,
 	        c1 <- clone(c1, pattern = file.path(ldPath(), "cloned-"))
 			c2 <- clone(c2, pattern = file.path(ldPath(), "cloned-"))
 	    }
-
+	
+		if (is.null(excludeIndex)) {
+			idx <- pmindex(dat)	
+		} else {
+			idx <- pmindex(dat)[-excludeIndex]
+		}
+		
 		if (m %in% c("quantile", "allQuantiles")){
 			assayDataElement(dat, "channel1") <- c1
 			assayDataElement(dat, "channel2") <- c2
-			dat <- quantileNormalize(dat, copy=FALSE, 
-				idx=setdiff(pmindex(dat), excludeIndex))
+			dat <- quantileNormalize(dat, copy=FALSE, idx=idx)
 			c1 <- assayDataElement(dat, "channel1") 
 			c2 <- assayDataElement(dat, "channel2") 
 		}
@@ -1159,8 +1164,7 @@ normalizeBetweenSamples <- function(dat, copy=TRUE,
 			if(is.null(controlIndex)) 	
 				controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
 			c2 <- SQNff(y=c2, copy=FALSE, log2=TRUE, 
-				ctrl.id=controlIndex, 
-				idx=setdiff(pmindex(dat), excludeIndex))
+				ctrl.id=controlIndex, idx=idx)
 			gc()	
 		}
 		assayDataElement(dat, "channel1") <- c1

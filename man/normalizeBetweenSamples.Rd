@@ -37,7 +37,7 @@ character string of the label assigned to non-CpG control probes in the annotati
 a vector of non-CpG control probe indices
 }
   \item{excludeIndex}{
-a vector of probes to ignore when creating normalization target distributions. 
+a vector indicating which pm probes to ignore when creating normalization target distributions. Can be a vector of probe indices or a boolean vector of length(pmindex(dat)).
 }
   \item{verbose}{
 boolean: Verbose output?
