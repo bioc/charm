@@ -1,7 +1,7 @@
 Package: charm
 Type: Package
 Title: Analysis of DNA methylation data from CHARM microarrays
-Version: 0.99.12
+Version: 0.99.13
 Date: 2010-03-22
 Author: Martin Aryee, Peter Murakami, Srinivasan Yegnasubramanian, Rafael Irizarry
 Maintainer: Martin Aryee <aryee@jhu.edu>
@@ -11,7 +11,7 @@ Imports: BSgenome, Biobase, oligo (>= 1.11.31),
 	Biostrings, IRanges,  siggenes, gtools, grDevices,
 	graphics, utils
 Suggests: charmData, BSgenome.Hsapiens.UCSC.hg18
-Description: This package implements analysis tools for DNA methylation microarrays. It finds differentially methylated regions between samples, calculates percentage methylation estimates and includes array quality assessment tools.
+Description: This package implements analysis tools for DNA methylation  data generated using Nimblegen microarrays and the McrBC protocol. It finds differentially methylated regions between samples, calculates percentage methylation estimates and includes array quality assessment tools.
 License: LGPL (>= 2)
 LazyLoad: yes
 biocViews: Microarray, Bioinformatics, DNAMethylation
