@@ -294,7 +294,7 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 
 	if (!missing(sampleKey)){
 		sampleKey <- sampleKey[o,]
-		keep <- apply(sampleKey[utIdx,]==sampleKey[mdIdx,], 2, all)
+		keep <- which(apply(sampleKey[utIdx,]==sampleKey[mdIdx,], 2, all))
 		extraCols <- sampleKey[utIdx, keep]
 	} else {
 		extraCols <- matrix(nrow=length(utIdx), ncol=0)

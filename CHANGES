@@ -1,3 +1,6 @@
+v0.99.14
+readCharm now allows NAs in the sampleKey
+
 v0.99.13
 Updated the DESCRIPTION Description field
 
