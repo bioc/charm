@@ -1,35 +1,34 @@
+import(methods)
+
 importClassesFrom(Biobase, eSet, NChannelSet, VersionedBiobase, Versioned)
 importClassesFrom(oligoClasses, TilingFeatureSet)
 
-#import(oligo)
-
-importMethodsFrom(oligo, pm, "pm<-", bg, "bg<-", pmindex, 
-	pmSequence, bgSequence, getX, getY, 
+importMethodsFrom(oligo, pm, "pm<-", bg, "bg<-", pmindex,
+	pmSequence, bgSequence, getX, getY,
 	pmChr, pmPosition, probeNames, getContainer)
 importMethodsFrom(BSgenome, providerVersion)
-importMethodsFrom(Biobase, annotation, pData, rowMedians,
+importMethodsFrom(Biobase, annotation, channelNames, rowMedians,
 	sampleNames, "sampleNames<-")
-importMethodsFrom(Biostrings, unmasked, vcountPattern,
- 	alphabetFrequency)
-importMethodsFrom(IRanges, Views, mad, median,
-	na.exclude, quantile, sd)
+importMethodsFrom(Biostrings, unmasked, vcountPattern)
+importMethodsFrom(IRanges, Views)
 
 importFrom(oligo, read.xysfiles2)
-importFrom("oligoClasses", "db", "ocSamples", "ocProbesets", "ocLapply",
-	"splitIndicesByLength", "splitIndicesByNode", "ldStatus", "ldPath")
-importFrom(preprocessCore, normalize.quantiles, 
+importFrom(oligoClasses, ocSamples, ocLapply,
+	splitIndicesByLength, splitIndicesByNode, ldStatus, ldPath)
+importFrom(preprocessCore, normalize.quantiles,
 	normalize.quantiles.use.target)
-importFrom(ff, ff, ffrowapply, ffcolapply, clone, clone.ff)	
+importFrom(ff, ff, ffrowapply, ffcolapply, clone, clone.ff)
+importFrom(Biobase, assayDataElement, "assayDataElement<-")
 importFrom(Biostrings, DNAString, DNAStringSet)
-importFrom(IRanges, narrow, width)
+importFrom(nor1mix, norMix, qnorMix)
 importFrom(siggenes, pi0.est, qvalue.cal)
 importFrom(gtools, combinations)
 importFrom(grDevices, dev.off, pdf)
-importFrom(graphics, abline, layout, legend, lines, par, plot.new,
-	plot.window, text)
-importFrom(methods, new)
+importFrom(graphics, abline, hist, layout, legend, lines, par,
+	plot, plot.new, plot.window, text)
 importFrom(stats, density, dnorm, ecdf, lm, loess, loess.control,
-	optimize, pnorm, predict, qt, reshape)
+	mad, median, na.exclude, optimize, pnorm, predict, qt, quantile,
+	reshape, sd)
 importFrom(utils, packageDescription, setTxtProgressBar,
 	txtProgressBar)
 

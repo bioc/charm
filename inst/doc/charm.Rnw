@@ -57,6 +57,7 @@ Each sample is represented by two xys files corresponding to the untreated (gree
 Load the \Rpackage{charm} package:
 <<loadCharm, results=hide>>=
 library(charm)
+library(charmData)
 @
 
 \section{Read in raw data}
