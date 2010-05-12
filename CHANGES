@@ -1,3 +1,6 @@
+v1.1.2
+Test commit. No code changes.
+
 v1.1.1
 Bioconductor 2.7 branch.
 validatePd now defaults to setting groupColumn to sampleNameColumn instead of reporting an error if not suitable column is found.
