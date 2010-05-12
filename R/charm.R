@@ -1911,9 +1911,9 @@ validatePd <- function(pd, fileNameColumn, sampleNameColumn,
 		if (length(groupColumn)==1) {
 			message("  OK - Found in column", groupColumn)
 		} else if (length(groupColumn)==0) {
-			msg <- paste(msg,  "No suitable group label column found. If there are no replicates you can set groupColumn to be the same as sampleNameColumn\n")
-			message("  ERROR -", msg, appendLF=FALSE)
-			return(list(status="ERROR", message=msg))	
+			msg <- paste(msg,  "No suitable group label column found - Defaulting to sample ID column for group labels (i.e. 1 sample per group)\n")
+			warning("No suitable group label column found - Defaulting to sample ID column for group labels (i.e. 1 sample per group)")
+			groupColumn <- sampleNameColumn
 		} else if (length(groupColumn)>1) {
 			warning("  WARNING - Multiple columns (", 
 				paste(groupColumn, collapse=", "), 
