@@ -33,7 +33,8 @@ importFrom(utils, packageDescription, setTxtProgressBar,
 	txtProgressBar)
 
 
-export(bgAdjust, countGC, cpgdensity, dmrFdr, dmrFinder, getControlIndex,
+export(bgAdjust, countGC, cpgdensity, dmrFdr, dmrFinder, dmrPlot, 
+	getControlIndex,
 	methPercent, methp, normalizeBetweenSamples, normalizeWithinSamples,
 	plotDensity, qcReport, readCharm, spatialAdjust, validatePd)
 
