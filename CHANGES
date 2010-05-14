@@ -1,3 +1,9 @@
+V1.1.3
+Added functions to plot results of dmrFinder.
+Also added options to dmrFinder that enable doing comparisons on paired samples.
+Also removed controlIndex from the list of objects returned by dmrFinder.
+Also added columns for average difference and maximum difference to the dmr tables returned by dmrFinder, and enabled sorting the table by them.
+
 v1.1.2
 Test commit. No code changes.
 
