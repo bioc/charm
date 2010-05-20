@@ -1,3 +1,10 @@
+v1.0.1
+Bugfix in methPercent: Fixed an error in P(q=0) estimation. Percentage methylation estimates will change slightly.
+Fixed formatting of the NEWS file.
+
+v1.0.0
+Bioconductor 2.6 release. No code changes
+
 v0.99.14
 readCharm now allows NAs in the sampleKey
 
