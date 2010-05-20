@@ -34,7 +34,7 @@ importFrom(utils, packageDescription, setTxtProgressBar,
 
 
 export(bgAdjust, countGC, cpgdensity, dmrFdr, dmrFinder, dmrPlot, 
-	getControlIndex,
+	regionPlot, getControlIndex,
 	methPercent, methp, normalizeBetweenSamples, normalizeWithinSamples,
 	plotDensity, qcReport, readCharm, spatialAdjust, validatePd)
 

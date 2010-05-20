@@ -1,3 +1,6 @@
+v1.1.7
+Added regionPlot to exports
+
 v1.1.6
 Fixed default colors in dmrPlot.
 Added optional argument to dmrPlot to specify how much to plot on either side of each DMR.

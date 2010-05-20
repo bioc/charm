@@ -565,7 +565,7 @@ for(i in intersect(which.plot,1:nrow(tab))) {
   #par(mar=c(0,2.5,0.25,1.1),oma=c(0,0,2,0))
   par(mar=c(0,3.5,0.25,1.1),oma=c(1.1,0,2,0),mgp=c(2.5,.5,0))
 
-  matplot(dmr$pos[Index], M[Index,wh], col=cl[th], lty=1, ylab=ylabel, ylim=YLIM, cex=.6, xlab="position", xlim=c(start,end), xaxt="n")
+  matplot(dmr$pos[Index], M[Index,wh], col=cl[th], lty=1, ylab=ylabel, ylim=YLIM, cex=.6, xlab="position", xlim=c(start,end), xaxt="n", las=1)
   matlines(dmr$pos[Index],sMM[Index,comps.l],lwd=2,lty=1,col=cl)
 
   abline(h=0,lwd=2,lty=3)
@@ -591,8 +591,8 @@ for(i in intersect(which.plot,1:nrow(tab))) {
       y = table(scpgs)/8
       SPAN=400/diff(range(x))
       d = loess(y~x,span=SPAN,degree=1)
-      plot(x,d$fitted,type="l",ylim=c(0,0.15),xlab="",
-           ylab="CpG density",xlim=c(start,end))
+      plot(x,d$fitted,type="l",ylim=c(0,0.15),xlab="Location",
+           ylab="CpG density",xlim=c(start,end), las=1)
       Rug(cpgs)
     ##  Rug(mcrbc,side=3)
       Index1 = which(ocpgi[,1]==as.character(thechr) &
