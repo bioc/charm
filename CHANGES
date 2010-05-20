@@ -1,3 +1,8 @@
+v1.1.6
+Fixed default colors in dmrPlot.
+Added optional argument to dmrPlot to specify how much to plot on either side of each DMR.
+Added a new function, regionPlot, to enable plotting of arbitrary regions on the array, not necessarily dmrs.
+
 v1.1.5
 Bugfix in methPercent. Percentage methylation estimates will change slightly. This fix has been backported to v1.0.1.
 Fixed formatting of the NEWS file.
