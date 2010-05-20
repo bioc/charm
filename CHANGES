@@ -1,3 +1,7 @@
+v1.1.5
+Bugfix in methPercent. Percentage methylation estimates will change slightly. This fix has been backported to v1.0.1.
+Fixed formatting of the NEWS file.
+
 v1.1.4
 Added dmrPlot to exports
 

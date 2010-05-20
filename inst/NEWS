@@ -1,5 +1,11 @@
-     ************************************************** 
-     *              2.11 SERIES NEWS                  *
-     **************************************************
+CHANGES IN VERSION 1.0
+----------------------
 
-First release.
+NEW FEATURES
+
+  o First release.
+
+BUG FIXES
+
+  o version 1.0.1 fixes a bug in methPercent. Percentage methylation 
+  estimates will be slightly different from version v1.0.0.

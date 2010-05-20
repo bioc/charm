@@ -1311,17 +1311,13 @@ methPercent <- function(m, pmIndex, ngc, commonParams=TRUE) {
 	}
 	for (i in 1:ncol(m)) {
 		x <- m[pmIndex,i]
-		a <- alpha[i]
-		b <- sigma[i]
+		alf <- alpha[i]
+		sig <- sigma[i]
 		mu <- 0
-        f0 <- dnorm(x, mean=0, sd=b)
-        f1 <- a * exp(0.5*a^2*b^2-a*x) * (pnorm((x-a*b^2)/b))
-        p0.prior <- sum(x<0, na.rm=TRUE) / sum(!is.na(x))
-        p0 <- (p0.prior*f0) / ((p0.prior*f0) + ((1-p0.prior)*f1))
-        p1 <- 1-p0
-        x <- x - mu - a * b^2
-        postM <- p1 * (x + b * ((1/sqrt(2 * pi)) * exp((-1/2) * ((x/b)^2)))/pnorm(x/b))
-		ret[,i] <- 1-2^(-postM)
+        p0 <- sum(x<0, na.rm=TRUE) / sum(!is.na(x))
+        a <- x - mu - alf * sig^2
+        qPost <- (1-p0) * (a + sig * dnorm(a/sig)/pnorm(a/sig))
+		ret[,i] <- 1-2^(-qPost)
    	}
 	colnames(ret) <- colnames(m)
 	return(ret)
