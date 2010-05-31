@@ -1,3 +1,6 @@
+v1.1.8
+readCharm: readCharm now keeps columns with matched NAs in the sampleKey.
+
 v1.1.7
 Added regionPlot to exports
 
