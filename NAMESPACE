@@ -23,7 +23,8 @@ importFrom(Biostrings, DNAString, DNAStringSet)
 importFrom(nor1mix, norMix, qnorMix)
 importFrom(siggenes, pi0.est, qvalue.cal)
 importFrom(gtools, combinations)
-importFrom(grDevices, dev.off, pdf)
+importFrom(grDevices, dev.off, pdf, palette)
+importFrom(RColorBrewer, brewer.pal)
 importFrom(graphics, abline, hist, layout, legend, lines, par,
 	plot, plot.new, plot.window, text)
 importFrom(stats, density, dnorm, ecdf, lm, loess, loess.control,

@@ -1,6 +1,6 @@
 ##This file contains both dmrPlot and dmrPlot_paired functions.
 
-dmrPlot <- function(dmr=dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".") {
+dmrPlot <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".") {
   
     if(is.null(dmr$DD)) {
         if(missing(colors.p)) colors.p=2:(length(unique(dmr$groups))+1)
@@ -15,7 +15,7 @@ dmrPlot <- function(dmr=dmr, which.table=1:length(dmr$tabs), which.plot=1:30, le
 }
 
 #This function is just results_function.R except there is no option to return the table(s) and it does not plot the gene panel.
-dmrPlot_unpaired <- function(dmr=dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", buffer=NULL){
+dmrPlot_unpaired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", buffer=NULL){
 
 stopifnot(inherits(which.plot,c("numeric","integer")))
 stopifnot(inherits(which.table,c("numeric","integer")))
@@ -235,7 +235,7 @@ cat("\nPlotting finished.\n")
 }
 
 
-dmrPlot_paired <- function(dmr=dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", buffer=NULL){
+dmrPlot_paired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", buffer=NULL){
 #NB: all.points and all.lines refer to all comparisons that were made, not that could be made!
   
 if(is.null(dmr$DD)) stop("DMRs are not from paired comparisons. Use dmrPlot().")

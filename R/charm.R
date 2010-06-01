@@ -1556,7 +1556,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
       if(length(cutoff)==1) cutoff <- rep(cutoff, length(compare)/2)
       if(length(compare)/2!=length(cutoff)) stop(length(compare)/2," comparisons requested but ", length(cutoff)," cutoff(s) provided.")
   }
-  if(paired) require(genefilter) #for rowSds in get.tt.paired
+  if(paired) require(genefilter) #for rowVars in get.tt.paired
   
   args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
 	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,
@@ -2039,7 +2039,7 @@ get.tt.paired <- function(DD,Indexes,filter=NULL,ws,verbose=TRUE) {
     if(ncol(DD[[i]])<3) message(paste("Comparison",i,"is just using raw differences!  May want to set lower CUTOFF."))
     #if(ncol(DD[[i]])<3) stop(paste("Comparison",i,"has <3 pairs."))
     MD[,i]   <- rowMeans(DD[[i]])
-    vars[,i] <- (rowSds(DD[[i]])^2)/ncol(DD[[i]]) #all NA if only 1 pair
+    vars[,i] <- rowVars(DD[[i]])/ncol(DD[[i]]) #all NA if only 1 pair
   }
 
   #Now get smoothed MD and its vars:

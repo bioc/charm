@@ -12,7 +12,7 @@ dmrFinder(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL,
 	controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, 
 	filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  
 	withinSampleNorm="loess", betweenSampleNorm="quantile", 
-	cutoff=0.995, sortBy="ttarea",...)
+	cutoff=0.995, sortBy="ttarea",paired=FALSE,pairs=NULL,DD=NULL,COMPS=NULL,...)
 }
 \arguments{
   \item{eset}{
@@ -72,14 +72,26 @@ between-sample normalization method. "quantile", "sqn" or "none"
 t-statistic cutoff used to identify probes as being in a DMR
 }
   \item{sortBy}{
-sort column for the DMR table. "area" or "ttarea"
+sort column for the DMR table. "area", "ttarea", "avg.diff", or "max.diff".
+}
+  \item{paired}{
+if TRUE, do comparisons within pairs of samples.  FALSE by default.
+}
+  \item{pairs}{
+if paired=TRUE, this must be provided.  a vector of pair identifiers for the samples in eset.  values must be the same within pairs and different between pairs.
+}
+  \item{DD}{
+DD object returned by dmrFinder when paired=TRUE.  This argument may be ignored. 
+}
+  \item{COMPS}{
+comps object returned by dmrFinder.  This argument may be ignored.
 }
   \item{\dots}{
 further options to be passed to methp
 }
 }
 \details{
-This function finds differentially methylated regions (DMRs). The sortby parameter can be used to sort the DMR by area (# probes x length), or t-statistic area (# probes x t-statistic)
+This function finds differentially methylated regions (DMRs). The sortby parameter can be used to sort the DMRs by area (# probes x average difference), t-statistic area (# probes x t-statistic), average difference, or maximum difference.
 }
 \value{
 A list with
@@ -102,7 +114,9 @@ A list with
 \item{pos }{a vector of positions}
 \item{pns }{a vector of probe region names}
 \item{controlIndex }{a vector of control probe indices}
-\item{gm }{Group medians of the l matrix}
+\item{gm }{if paired=FALSE, group medians of the l matrix}
+\item{DD }{if paired=TRUE, a list of within-pair differences for each comparison}
+\item{sMD }{if paired=TRUE, a matrix of smoothed mean within-pair differences for each comparison}
 \item{groups }{a vector of group labels}
 \item{args }{the DMR finder parameter vector}
 \item{comps }{the vector of pairwise group comparisons}
