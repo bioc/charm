@@ -630,7 +630,7 @@ get.smooth <- function(lm,filter=NULL,Indexes,ws=3,verbose=TRUE,columns=1:ncol(l
   slm=matrix(NA,nrow(lm),ncol(lm))
   colnames(slm) = colnames(lm)
   if(verbose) cat("Smoothing:\n")
-  if(verbose) pb = txtProgressBar(min=1,max=length(Indexes),initial=0,style=3)
+  if(verbose) pb = txtProgressBar(min=1,max=length(Indexes),initial=0,style=1)
   for(i in seq(along=Indexes)){
     #if(verbose) if(i%%1000==0) cat(".")
     Index=Indexes[[i]]

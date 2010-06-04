@@ -1526,7 +1526,7 @@ get.tt <- function(lm,ls,ns,filter,Indexes,COMPS,ws,verbose){
       dm[,r]=lm[,j]-lm[,k]
       vr[,r]=(ls[,j]^2)/ns[j]+(ls[,k]^2)/ns[k]
   }
-  if(verbose) pb = txtProgressBar(min=1, max=length(Indexes), initial=0, style=3)
+  if(verbose) pb = txtProgressBar(min=1, max=length(Indexes), initial=0, style=1)
   for(i in seq(along=Indexes)){
     #if(verbose) if(i%%1000==0) cat(".")
     Index=Indexes[[i]]
@@ -2052,7 +2052,7 @@ get.tt.paired <- function(DD,Indexes,filter=NULL,ws,verbose=TRUE) {
   } else fs =filter
 
   if(verbose) message("Smoothing mean differences using window size of ",ws*2+1,":")
-  if(verbose) pb = txtProgressBar(min=1, max=length(Indexes), initial=0, style=3)
+  if(verbose) pb = txtProgressBar(min=1, max=length(Indexes), initial=0, style=1)
   for(i in seq(along=Indexes)) {
     Index=Indexes[[i]]
     for(j in ok){

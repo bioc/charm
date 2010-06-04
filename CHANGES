@@ -1,3 +1,6 @@
+v1.1.10
+Changed the txtProgressBar progress reports in get.tt, get.tt.paired, and get.smooth from style=3 to style=1.
+
 v1.1.9
 Added documentation for dmrPlot and regionPlot.  Updated documentation for dmrFinder and dmrFdr.  Made RColorBrewer and genefilter packages dependencies.
 
