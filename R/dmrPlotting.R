@@ -1,21 +1,21 @@
 ##This file contains both dmrPlot and dmrPlot_paired functions.
 
-dmrPlot <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".") {
+dmrPlot <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", plot.p=TRUE) {
   
     if(is.null(dmr$DD)) {
         if(missing(colors.p)) colors.p=2:(length(unique(dmr$groups))+1)
         if(missing(colors.l)) colors.l=2:(length(unique(dmr$groups))+1)       
-        dmrPlot_unpaired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath)
+        dmrPlot_unpaired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath, plot.p=plot.p)
     } else {
         if(missing(colors.p)) colors.p = 2:(ncol(dmr$sMD)+1)
         if(missing(colors.l)) colors.l = 2:(ncol(dmr$sMD)+1)
-        dmrPlot_paired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath)
+        dmrPlot_paired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath, plot.p=plot.p)
     }
     
 }
 
 #This function is just results_function.R except there is no option to return the table(s) and it does not plot the gene panel.
-dmrPlot_unpaired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", buffer=NULL){
+dmrPlot_unpaired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", buffer=NULL, plot.p=TRUE){
 
 stopifnot(inherits(which.plot,c("numeric","integer")))
 stopifnot(inherits(which.table,c("numeric","integer")))
@@ -90,7 +90,7 @@ Indexes=split(seq(along=pns),pns)
 pos=dmr$pos
 #In dmrFinder dmr$gm only gets columns for groups that are in >=1 comparison, so:
 all.compared = all(unique(FACS)%in%colnames(dmr$gm))
-if(is.null(dmr$p)){
+if(is.null(dmr$p) | !plot.p){
     if(all.lines & !all.compared){
         gmp = get.tog(l=dmr$l,groups=FACS,compare=comp(FACS),verbose=TRUE)$lm
     } else{ gmp = dmr$gm }
@@ -105,7 +105,7 @@ if(is.null(dmr$p)){
     }
 }
 sMM=get.smooth(gmp,Indexes=Indexes,filter=NULL,columns=1:ncol(gmp),ws=dmr$args$ws)
-if(is.null(dmr$p)) M=dmr$l else M=dmr$p
+if(is.null(dmr$p) | !plot.p) M=dmr$l else M=dmr$p
 
 for(h in 1:nrow(dmr$comps)) stopifnot(identical(paste(colnames(dmr$gm)[dmr$comps[h,]],collapse="-"), names(tabs)[h]))
 
@@ -156,7 +156,7 @@ for(object.i in which.table[has]){
 
     for(i in intersect(which.plot,1:nrow(obj))){
       cat(i," ")
-      if(is.null(dmr$p)){
+      if(is.null(dmr$p) | !plot.p){
           YLIM=c(-0.5,3)
           ylabel="M"
       } else{
@@ -235,7 +235,7 @@ cat("\nPlotting finished.\n")
 }
 
 
-dmrPlot_paired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", buffer=NULL){
+dmrPlot_paired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", buffer=NULL, plot.p=TRUE){
 #NB: all.points and all.lines refer to all comparisons that were made, not that could be made!
   
 if(is.null(dmr$DD)) stop("DMRs are not from paired comparisons. Use dmrPlot().")
@@ -311,7 +311,7 @@ pns=dmr$pns
 Indexes=split(seq(along=pns),pns)
 pos=dmr$pos
 
-if(is.null(dmr$p)) {
+if(is.null(dmr$p) | !plot.p) {
     DD = dmr$DD
     sMD = dmr$sMD
 } else { #then user wanted to use p (or rather, logit(p))
@@ -348,8 +348,8 @@ for(object.i in which.table[has]){
 
     for(i in intersect(which.plot,1:nrow(obj))){
       cat(i," ")
-      if(is.null(dmr$p)){
-          YLIM=c(-1,1)
+      if(is.null(dmr$p) | !plot.p){
+          YLIM=c(-6,6)
           ylabel="difference in M"
       } else{
           YLIM=c(-1, ifelse(all.lines,1+ncol(sMD)*.03*legend.size,1+.06*legend.size) )
@@ -447,8 +447,9 @@ cat("\nPlotting finished.\n")
 #cl - colors for the plotted groups in alphabetic order
 #legend.size - number of times to magnify the legend
 #buffer - how much to plot on either side of each region
+#plot.p - plot percentages or l
 
-regionPlot <- function(tab, dmr, outfile, which.plot, which.groups=colnames(dmr$gm), cl=2:(ncol(dmr$gm)+1), legend.size=1, buffer=3000) {
+regionPlot <- function(tab, dmr, outfile, which.plot, which.groups=colnames(dmr$gm), cl=2:(ncol(dmr$gm)+1), legend.size=1, buffer=3000, plot.p=TRUE) {
 
 if(!inherits(buffer,c("numeric","integer"))) stop("buffer must be numeric.")
 if(missing(tab)) stop("tab argument must be provided.")
@@ -524,13 +525,13 @@ ocpgi=data.frame(chr=I(cpg.cur[,1]), start=as.numeric(cpg.cur[,2]), end=as.numer
 chr=dmr$chr
 ocpgi=ocpgi[ocpgi$chr%in%unique(as.character(chr)),] 
 
-if(is.null(dmr$p)) {
+if(is.null(dmr$p) | !plot.p) {
     gmp = dmr$gm[,which.groups]
 } else {
     gmp = exp(dmr$gm[,which.groups])/(1+exp(dmr$gm[,which.groups]))
 }
 sMM=get.smooth(gmp,Indexes=Indexes,filter=NULL,columns=1:ncol(gmp),ws=dmr$args$ws)
-if(is.null(dmr$p)) M=dmr$l else M=dmr$p
+if(is.null(dmr$p) | !plot.p) M=dmr$l else M=dmr$p
 
 wh = which(dmr$groups%in%which.groups)
 th = as.numeric(factor(rank(dmr$groups[wh])))
@@ -542,7 +543,7 @@ pdf(file=outfile, width=11, height=8, pointsize=10)
 palette(rev(brewer.pal(8,"Dark2")[c(2,1,3,4,8)]))
 for(i in intersect(which.plot,1:nrow(tab))) {
   cat(i," ")
-  if(is.null(dmr$p)){
+  if(is.null(dmr$p) | !plot.p){
       YLIM=c(-0.5,3)
       ylabel="M"
   } else{

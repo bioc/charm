@@ -64,11 +64,12 @@ Martin Aryee <aryee@jhu.edu>
 		dmr <- dmrFdr(dmr, numPerms=3, seed=123) 
 		head(dmr$tabs[[1]])
 
-                # Plot top 10 DMRs:
-                dmrPlot(dmr=dmr, which.table=1, which.plot=1:10, legend.size=1, all.lines=TRUE, all.points=TRUE, colors.l=c("blue","black"), colors.p=c("blue","black"), outpath=".")
-                # plot any given genomic regions using this data, supplying the regions in a data frame that must have columns with names "chr", "start", and "end": 
-                mytab = data.frame(chr=as.character(c(dmr$tabs[[1]]$chr[1],"chrY",dmr$tabs[[1]]$chr[-1])), start=as.numeric(c(dmr$tabs[[1]]$start[1],1,dmr$tabs[[1]]$start[-1])), end=as.numeric(c(dmr$tabs[[1]]$end[1],100,dmr$tabs[[1]]$end[-1])), stringsAsFactors=FALSE)[1:5,]
-                regionPlot(tab=mytab, dmr=dmr, outfile="./myregions.pdf", which.plot=1:5, which.groups=c("liver","colon"), cl=c("blue","black"), legend.size=1, buffer=3000)
-                # note that region 2 is not plotted since it is not on the array.
+                ##Not run:
+                ## Plot top 10 DMRs:
+                #dmrPlot(dmr=dmr, which.table=1, which.plot=1:10, legend.size=1, all.lines=TRUE, all.points=TRUE, colors.l=c("blue","black"), colors.p=c("blue","black"), outpath=".")
+                ## plot any given genomic regions using this data, supplying the regions in a data frame that must have columns with names "chr", "start", and "end": 
+                #mytab = data.frame(chr=as.character(c(dmr$tabs[[1]]$chr[1],"chrY",dmr$tabs[[1]]$chr[-1])), start=as.numeric(c(dmr$tabs[[1]]$start[1],1,dmr$tabs[[1]]$start[-1])), end=as.numeric(c(dmr$tabs[[1]]$end[1],100,dmr$tabs[[1]]$end[-1])), stringsAsFactors=FALSE)[1:5,]
+                #regionPlot(tab=mytab, dmr=dmr, outfile="./myregions.pdf", which.plot=1:5, which.groups=c("liver","colon"), cl=c("blue","black"), legend.size=1, buffer=3000)
+                ## note that region 2 is not plotted since it is not on the array.
 	}
 }
