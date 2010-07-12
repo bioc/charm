@@ -1,3 +1,6 @@
+v1.1.12
+Fixed scaleSamples function (moved return(dat) to after the if statement).
+
 v1.1.11
 Added 'plot.p' argument to dmrPlot and regionPlot.  If plot.p=FALSE, the functions will return plots using the dmr$l data rather than the dmr$p data.  If dmrFinder was used on l instead of p, though, plot.p is necessarily FALSE.
 

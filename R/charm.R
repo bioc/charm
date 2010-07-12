@@ -1049,8 +1049,8 @@ scaleSamples <- function(dat, copy=TRUE, scale=c(0.99, 0.99)) {
 			pmIndex=pmIndex)
 		assayDataElement(dat, "channel1") <- ret[[1]]
 		assayDataElement(dat, "channel2") <- ret[[2]]
-		return(dat)
 	}
+        return(dat)
 }
 
 #########
@@ -1480,7 +1480,7 @@ get.tog <- function(l,groups,compare,verbose){
   ls=matrix(0,nrow(l),ng)
   ns=sapply(gIndex,length)
   
-  if(verbose) message("Computing group medians and SDs for",ng,"groups:")
+  if(verbose) message("Computing group medians and SDs for ",ng," groups:")
   for(i in seq(along=gIndex)){
     if(verbose) message("\n",i)
     Index=gIndex[[i]]
