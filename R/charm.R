@@ -1557,6 +1557,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
       if(length(compare)/2!=length(cutoff)) stop(length(compare)/2," comparisons requested but ", length(cutoff)," cutoff(s) provided.")
   }
   if(paired) require(genefilter) #for rowVars in get.tt.paired
+  if(!all(compare%in%groups)) stop("Not all groups specified in the compare argument are in the groups argument.")
   
   args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
 	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,

@@ -1,3 +1,6 @@
+v1.1.13
+Added an additional check to the start of dmrFinder to prevent a cryptic error later.  Also changed the manual page for methp to correct the description of the excludeIndex argument.
+
 v1.1.12
 Fixed scaleSamples function (moved return(dat) to after the if statement).
 
