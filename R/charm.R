@@ -164,6 +164,8 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		verbose=TRUE, returnM=FALSE, 
 		plotDensity=NULL, plotDensityGroups=NULL) {
 
+        if(!is.null(excludeIndex)) if(!inherits(excludeIndex,c("numeric","integer"))) stop("excludeIndex argument, if not NULL, must be a numeric or integer vector.")
+
 	if(!is.null(plotDensity)) {
 		pdf(file=plotDensity, height=11, width=8)
 		par(mfrow=c(5,2), mar=c(2,2,4,2))
@@ -1545,7 +1547,7 @@ get.tt <- function(lm,ls,ns,filter,Indexes,COMPS,ws,verbose){
 }
 
 
-dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea",paired=FALSE,pairs=NULL,DD=NULL,COMPS=NULL,...){
+dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea",paired=FALSE,pairs=NULL,DD=NULL,COMPS=NULL,ignoreChr=NULL,...){
 
   groups = as.character(groups)
   if(paired & is.null(DD) & is.null(pairs)) stop("pairs argument must be provided if paired=TRUE.")
@@ -1562,7 +1564,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
   args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
 	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,
             controlProbes=controlProbes, cutoff=cutoff, sortBy=sortBy,
-            compare=compare, paired=paired, pairs=pairs)
+            compare=compare, paired=paired, pairs=pairs, ignoreChr=ignoreChr)
 
   # dmrFinder must be given either eset or p/l,chr,pos,pns, and package.
   # If eset is supplied then all the latter will be taken from it (with any
@@ -1721,8 +1723,8 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
         LAST=max(tmp2)
       }
       
-      Index=which(type!=0)
-	  rows <- length(unique(segmentation[Index]))
+      Index = which(type!=0)
+      rows  = length(unique(segmentation[Index]))
       res[[r]]=data.frame(
            chr=tapply(chr[Index],segmentation[Index],function(x) x[1]),
            start=tapply(pos[Index],segmentation[Index],min),
@@ -1767,7 +1769,8 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
       if(sortBy=="area")   res[[r]]=res[[r]][order(-area),]
       if(sortBy=="ttarea") res[[r]]=res[[r]][order(-ttarea),]
       if(sortBy=="avg.diff") res[[r]]=res[[r]][order(-diff),]
-      if(sortBy=="max.diff") res[[r]]=res[[r]][order(-maxdiff),]      
+      if(sortBy=="max.diff") res[[r]]=res[[r]][order(-maxdiff),]
+      if(!is.null(ignoreChr)) res[[r]]=subset(res[[r]],!chr%in%ignoreChr)
       message(nrow(res[[r]])," DMR candidates found using cutoff=",cutoff[r],".")
   }
   if(verbose) message("\nDone")

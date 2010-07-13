@@ -86,6 +86,9 @@ DD object returned by dmrFinder when paired=TRUE.  This argument may be ignored.
   \item{COMPS}{
 comps object returned by dmrFinder.  This argument may be ignored.
 }
+  \item{ignoreChr}{
+DMRs in the resulting DMR tables with this value of chr will be removed.
+}
   \item{\dots}{
 further options to be passed to methp
 }
