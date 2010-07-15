@@ -1,3 +1,6 @@
+v1.1.15
+Moved a line of code that checks the arguments provided in dmrFinder to prevent an error message later on.
+
 v1.1.14
 Added an additional check to the start of methp to make sure excludeIndex is a numeric or integer vector.  Also added ignoreChr argument to dmrFinder to enable removing all DMRs in specified chromosomes from the resulting DMR tables.
 
