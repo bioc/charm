@@ -1,3 +1,6 @@
+v1.1.16
+Added a warning message to readCharm if any columns of sampleKey contain discrepant values and are therefore removed.
+
 v1.1.15
 Moved a line of code that checks the arguments provided in dmrFinder to prevent an error message later on.
 
