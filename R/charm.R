@@ -299,7 +299,7 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 		same <- sampleKey[utIdx,]==sampleKey[mdIdx,]
 		bothNA <- is.na(sampleKey[utIdx,]) & is.na(sampleKey[mdIdx,])
 		keep <- apply(same | bothNA, 2, all)
-                if(any(!keep)) warning("The following columns in sampleKey contain discrepant values and are being removed: ", paste(which(!keep),collapse=", "))
+                if(any(!keep)) message("The following columns in sampleKey contain discrepant values between channels and are being removed: ", paste(which(!keep),collapse=", "))
 		extraCols <- sampleKey[utIdx, keep]
 	} else {
 		extraCols <- matrix(nrow=length(utIdx), ncol=0)
@@ -1548,7 +1548,7 @@ get.tt <- function(lm,ls,ns,filter,Indexes,COMPS,ws,verbose){
 }
 
 
-dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea",paired=FALSE,pairs=NULL,DD=NULL,COMPS=NULL,ignoreChr=NULL,...){
+dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, ignoreChr=NULL,...){
 
   groups = as.character(groups)
   if(paired & is.null(DD) & is.null(pairs)) stop("pairs argument must be provided if paired=TRUE.")
@@ -1736,6 +1736,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
            indexStart=tapply(Index,segmentation[Index],min),
            indexEnd=tapply(Index,segmentation[Index],max))
       length=res[[r]]$indexEnd-res[[r]]$indexStart+1
+      res[[r]]$nprobes = length
       if(!paired) {
 	  if (is.null(p)) { #  We return log-ratios
 	      colnames(res[[r]]) <- sub("p1", "m1", colnames(res[[r]]))

@@ -1,3 +1,6 @@
+v1.1.17
+Changed the previously added warning to a message.  Also added a column to the DMR tables output by dmrFinder reporting the number of probes in each DMR.
+
 v1.1.16
 Added a warning message to readCharm if any columns of sampleKey contain discrepant values and are therefore removed.
 
