@@ -1,3 +1,6 @@
+v1.1.18
+Changed the ignoreChr argument of dmrFinder to removeIf, which is more general.
+
 v1.1.17
 Changed the previously added warning to a message.  Also added a column to the DMR tables output by dmrFinder reporting the number of probes in each DMR.
 

@@ -12,7 +12,8 @@ dmrFinder(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL,
 	controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, 
 	filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  
 	withinSampleNorm="loess", betweenSampleNorm="quantile", 
-	cutoff=0.995, sortBy="ttarea",paired=FALSE,pairs=NULL,DD=NULL,COMPS=NULL,...)
+	cutoff=0.995, sortBy="ttarea",paired=FALSE,pairs=NULL,DD=NULL,COMPS=NULL,
+        removeIf=expression(nprobes<2),...)
 }
 \arguments{
   \item{eset}{
@@ -86,36 +87,42 @@ DD object returned by dmrFinder when paired=TRUE.  This argument may be ignored.
   \item{COMPS}{
 comps object returned by dmrFinder.  This argument may be ignored.
 }
-  \item{ignoreChr}{
-DMRs in the resulting DMR tables with this value of chr will be removed.
+  \item{removeIf}{
+expression indicating which DMRs to drop from the DMR tables that get returned.  The negation of this is used as the subset argument to the subset function when it is called on the final DMR table before it is returned.  If NULL, no DMRs will be subsetted out from the final table before it is returned.  DMR table column names to use are listed below.  E.g., to drop all DMRs with less than 4 probes, set removeIf=expression(nprobes<4).
 }
   \item{\dots}{
 further options to be passed to methp
 }
 }
 \details{
-This function finds differentially methylated regions (DMRs). The sortby parameter can be used to sort the DMRs by area (# probes x average difference), t-statistic area (# probes x t-statistic), average difference, or maximum difference.
+This function finds differentially methylated regions (DMRs). The sortBy parameter can be used to sort the DMRs by area (# probes x average difference), t-statistic area (# probes x average t-statistic), average difference, or maximum difference.
 }
 \value{
 A list with
 \item{tabs}{A list of DMR tables, one per comparison with columns:
 	\describe{
+                \item{chr}{chromosome of DMR (bp)}
 		\item{start}{start of DMR (bp)}
 		\item{end}{end of DMR (bp)}
-		\item{p1}{average percentage methylation of all probes between start and end for group 1}
-		\item{p2}{average percentage methylation of all probes between start and end for group 2}
+		\item{p1}{if paired=FALSE, and p!=NULL or l=NULL, average percentage methylation of all probes between start and end for group 1}
+		\item{p2}{if paired=FALSE, and p!=NULL or l=NULL, average percentage methylation of all probes between start and end for group 2}
+		\item{m1}{if paired=FALSE, p=NULL and l!=NULL, average methylation l (logit(percentage methylation) if l=NULL) of all probes between start and end for group 1}
+		\item{m2}{if paired=FALSE, p=NULL and l!=NULL, average methylation l (logit(percentage methylation) if l=NULL) of all probes between start and end for group 2}
 		\item{regionName}{name of the tiling region in which the DMR is found (These names come from the NDF file)}
 		\item{indexStart}{index of first probe in DMR}
 		\item{indexEnd}{index of last probe in DMR}
-		\item{area}{(indexEnd-indexStart) x (p1-p2), i.e. length x average difference}	
-		\item{ttarea}{(indexEnd-indexStart) x (average probe level t-stat for between group difference)}		
+                \item{nprobes}{number of probes for the DMR, i.e., indexEnd-indexStart+1}
+                \item{diff}{average percentage methylation difference within the DMR if paired=FALSE, and average l (logit(percentage) methylation if l=NULL) difference within the DMR if paired=TRUE}
+                \item{maxdiff}{maximum percentage methylation difference within the DMR if paired=FALSE, and maximum l (logit(percentage) methylation if l=NULL) difference within the DMR if paired=FALSE}
+		\item{area}{nprobes x average difference}	
+		\item{ttarea}{nprobes x (average probe level t-statistic for between group difference)}		
 	}
 }
 \item{p}{A matrix of percentage methylation estimates (NOTE: the probe order may differ from that of the input p matrix since probes are sorted into chromosomal order)}
-\item{l}{This contains methylation log-ratios if they were passed to the function. Otherwise it contains logit-transformed percentage methylation estimates}
+\item{l}{This contains methylation log-ratios if they were passed to the function. Otherwise it contains logit-transformed percentage methylation estimates. (NOTE: the probe order may differ from that of the input l matrix since probes are sorted into chromosomal order)}
 \item{chr }{a vector of chromosomes corresponding to the rows of p and l}
-\item{pos }{a vector of positions}
-\item{pns }{a vector of probe region names}
+\item{pos }{a vector of positions corresponding to the rows of p and l}
+\item{pns }{a vector of probe region names corresponding to the rows of p and l}
 \item{controlIndex }{a vector of control probe indices}
 \item{gm }{if paired=FALSE, group medians of the l matrix}
 \item{DD }{if paired=TRUE, a list of within-pair differences for each comparison}

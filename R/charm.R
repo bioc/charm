@@ -1548,8 +1548,9 @@ get.tt <- function(lm,ls,ns,filter,Indexes,COMPS,ws,verbose){
 }
 
 
-dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, ignoreChr=NULL,...){
+dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, removeIf=expression(nprobes<2),...){
 
+  if(!is.null(removeIf) & !is.expression(removeIf)) stop("If not NULL, removeIf argument must be an expression.")
   groups = as.character(groups)
   if(paired & is.null(DD) & is.null(pairs)) stop("pairs argument must be provided if paired=TRUE.")
   if(paired & is.null(DD) & length(pairs)!=length(groups)) stop("pairs argument must be same length as groups.")
@@ -1565,7 +1566,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
   args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
 	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,
             controlProbes=controlProbes, cutoff=cutoff, sortBy=sortBy,
-            compare=compare, paired=paired, pairs=pairs, ignoreChr=ignoreChr)
+            compare=compare, paired=paired, pairs=pairs, removeIf=removeIf)
 
   # dmrFinder must be given either eset or p/l,chr,pos,pns, and package.
   # If eset is supplied then all the latter will be taken from it (with any
@@ -1772,7 +1773,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
       if(sortBy=="ttarea") res[[r]]=res[[r]][order(-ttarea),]
       if(sortBy=="avg.diff") res[[r]]=res[[r]][order(-diff),]
       if(sortBy=="max.diff") res[[r]]=res[[r]][order(-maxdiff),]
-      if(!is.null(ignoreChr)) res[[r]]=subset(res[[r]],!chr%in%ignoreChr)
+      if(!is.null(removeIf)) res[[r]]=subset(res[[r]],subset=!eval(removeIf))
       message(nrow(res[[r]])," DMR candidates found using cutoff=",cutoff[r],".")
   }
   if(verbose) message("\nDone")
