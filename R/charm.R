@@ -280,6 +280,7 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 	if (length(mdIdx)==0) {
 		stop("No files match the methyl-depleted extension ", md, "\nPlease use the md option to set the correct extension\n")
 	}
+    if(length(utIdx)+length(mdIdx) < length(files)) warning("Some file names do not contain the ut or md arguments.")
     filesUt <- files[utIdx]
     filesMd <- files[mdIdx]
     if (!all(sub(ut, "", filesUt) == sub(md, "", filesMd))) 
