@@ -1093,7 +1093,7 @@ SQNff <- function (y, copy=TRUE, log2=FALSE, N.mix = 5, ctrl.id, idx,
 	if(log2) ctrl <- log2(ctrl)		
     QE = apply(ctrl, 2, sort)
     QN = apply(QE, 1, median)
-    mix.param = Mclust(QN, G = N.mix)$parameters
+    mix.param = suppressWarnings(Mclust(QN, G = N.mix)$parameters)
     mix.param = norMix(mu = mix.param$mean, sig2 = mix.param$variance$sigmasq, 
         w = mix.param$pro)
     qq = seq(1/(2 * length(QN)), 1 - 1/(2 * length(QN)), 1/length(QN))
