@@ -7,7 +7,7 @@ Count probe GC content
 Return the GC content for each probe 
 }
 \usage{
-countGC(dat, type = "pm")
+countGC(dat, type = "pm", idx)
 }
 \arguments{
   \item{dat}{
@@ -16,6 +16,10 @@ a TilingFeatureSet object
   \item{type}{
 pm or bg probes
 }
+  \item{idx}{
+An optional vector of probe indices for which to return GC content. If not specified, values for all pm (or bg) probes will be returned.
+}
+
 }
 \details{
 This function returns the sum of #G + #C in the pm or bg probes.
