@@ -19,7 +19,7 @@ importFrom(preprocessCore, normalize.quantiles,
 	normalize.quantiles.use.target)
 importFrom(ff, ff, ffrowapply, ffcolapply, clone, clone.ff)
 importFrom(Biobase, assayDataElement, "assayDataElement<-")
-importFrom(Biostrings, DNAString, DNAStringSet)
+importFrom(Biostrings, DNAString, DNAStringSet, alphabetFrequency)
 importFrom(nor1mix, norMix, qnorMix)
 importFrom(siggenes, pi0.est, qvalue.cal)
 importFrom(gtools, combinations)

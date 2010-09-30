@@ -544,8 +544,8 @@ countGC <- function(dat, type="pm") {
     } else {
         stop("Invalid type. Choose 'pm' or 'bg'\n")
     }
-    bc <- oligo:::basecontent(seqs)
-    bc[,"C"] + bc[,"G"]
+    tmp <- alphabetFrequency(seqs, baseOnly=TRUE)
+	tmp[,"C"] + tmp[,"G"]
 }
 
 cpgdensity <-function(subject, chr, pos, windowSize=500, sequence="CG") {

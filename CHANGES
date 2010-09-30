@@ -1,3 +1,6 @@
+v1.1.21
+replaced oligo::basecontent with Biostrings::alphabetFrequency in countGC
+
 v1.1.19
 readCharm now reports a warning if not all file names contain either the ut or md arguments.
 
