@@ -7,8 +7,8 @@ Log-ratio density plot for all probes and control probes
 Make density plots of log-ratios for two-color microarray data. Two plots are produced: one for all probes on the array, and a second for the control probes.
 }
 \usage{
-plotDensity(dat, rx = c(-4, 6), controlIndex = NULL, pdfFile = NULL, 
-	main = NULL, lab=NULL)
+plotDensity(dat, rx = c(-4, 6), controlIndex = NULL, controlProbes=NULL,
+            pdfFile = NULL, main = NULL, lab=NULL)
 }
 \arguments{
   \item{dat}{
@@ -19,6 +19,9 @@ x-axis range
 }
   \item{controlIndex}{
 a vector of non-CpG control probe indices
+}
+  \item{controlProbes}{
+vector of names used to denote control probes in the 'container' column of the Nimblegen annotation (ndf) file.
 }
   \item{pdfFile}{
 name of output pdf file

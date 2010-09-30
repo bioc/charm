@@ -165,13 +165,14 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		plotDensity=NULL, plotDensityGroups=NULL) {
 
         if(!is.null(excludeIndex)) if(!inherits(excludeIndex,c("numeric","integer"))) stop("excludeIndex argument, if not NULL, must be a numeric or integer vector.")
+        if(!any(controlProbes%in%getContainer(dat))) stop("Invalid controlProbes argument: no such values not found for this array.")
 
 	if(!is.null(plotDensity)) {
 		pdf(file=plotDensity, height=11, width=8)
 		par(mfrow=c(5,2), mar=c(2,2,4,2))
 		lwd <- rep(1, ncol(dat))
 		plotDensity(dat, main="1. Raw", lab=plotDensityGroups, 
-		 	controlIndex=controlIndex)
+		 	controlIndex=controlIndex, controlProbes=controlProbes)
 	}
 
 	if (is.list(betweenSampleNorm)) {
@@ -207,7 +208,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 	}
 	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
-		plotDensity(dat, main="2. After spatial & bg", lab=plotDensityGroups, controlIndex=controlIndex)
+		plotDensity(dat, main="2. After spatial & bg", lab=plotDensityGroups, controlIndex=controlIndex, controlProbes=controlProbes)
 	}	
 	# Within sample normalization
 	if (is.null(controlIndex)) {
@@ -219,7 +220,8 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		scale=scale, controlIndex=controlIndex, verbose=verbose)
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="3. After within-sample norm", 
-			lab=plotDensityGroups, controlIndex=controlIndex)
+			lab=plotDensityGroups, controlIndex=controlIndex,
+                        controlProbes=controlProbes)
 	}
 	if (verbose>2) print(gc())		
 
@@ -240,7 +242,8 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="4. After between-sample norm",
-		 lab=plotDensityGroups, controlIndex=controlIndex)
+		 lab=plotDensityGroups, controlIndex=controlIndex,
+                 controlProbes=controlProbes)
 	}		
 
 	if (returnM=="TRUE") {
@@ -253,10 +256,11 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 	}
 	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
-		if (is.null(controlIndex)) controlIndex <- getControlIndex(dat)
+		if (is.null(controlIndex)) controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
 		if(returnM=="FALSE") 
 			plotDensity(retval, main="5. Percentage methylation", 
-			rx=c(0,1), lab=plotDensityGroups, controlIndex=controlIndex)
+			rx=c(0,1), lab=plotDensityGroups, controlIndex=controlIndex,
+                       controlProbes=controlProbes)
 		dev.off()		
 	}
 	rm(dat)
@@ -268,7 +272,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys", 
 		sampleKey, sampleNames=NULL, pkgname,
 		type=NULL, ...) {
-    files <- as.character(files)
+    files <- files2 <- as.character(files)
     o <- order(files)
     files <- files[o]
     if (!is.null(sampleNames)) sampleNames <- as.character(sampleNames[o])
@@ -280,7 +284,7 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 	if (length(mdIdx)==0) {
 		stop("No files match the methyl-depleted extension ", md, "\nPlease use the md option to set the correct extension\n")
 	}
-    if(length(utIdx)+length(mdIdx) < length(files)) warning("Some file names do not contain the ut or md arguments.")
+    if(length(utIdx)+length(mdIdx) < length(files)) warning("Some file names do not contain the ut or md arguments. Those files will not be read in.")
     filesUt <- files[utIdx]
     filesMd <- files[mdIdx]
     if (!all(sub(ut, "", filesUt) == sub(md, "", filesMd))) 
@@ -332,12 +336,18 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 	#			"Methyl-depleted channel file name"))
 	#}
 	## END TEMPORARY FIX ##
-	 		
-    pdd <- new("AnnotatedDataFrame", data=pd, varMetadata=vpd)
-    sampleNames(pdd) <- sampleNames  
-   	dat <- read.xysfiles2(channel1=file.path(path, filesUt), 
-			channel2=file.path(path, filesMd), pkgname=pkgname,
-        	phenoData=pdd, sampleNames=sampleNames, ...)     
+	 
+    ##Put arrays back in the order in which their ut channels were listed in files arg:
+    files2 = files2[files2%in%c(pd$arrayUT,pd$arrayMD)]
+    files2Ut = files2[sort(grep(ut, files2))]
+    reord = match(files2Ut,pd$arrayUT)
+    files2Md = pd$arrayMD[reord]
+
+    pdd <- new("AnnotatedDataFrame", data=pd[reord,], varMetadata=vpd)
+    sampleNames(pdd) <- sampleNames[reord]  
+   	dat <- read.xysfiles2(channel1=file.path(path, files2Ut), 
+			channel2=file.path(path, files2Md), pkgname=pkgname,
+        	phenoData=pdd, sampleNames=sampleNames[reord], ...)     
 	return(dat)
 }
 
@@ -346,7 +356,7 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 ## plotDensity ##
 #################
 plotDensity <- function(dat, rx=c(-4,6), controlIndex=NULL, 
-		pdfFile=NULL, main=NULL, lab=NULL) {
+		controlProbes=NULL, pdfFile=NULL, main=NULL, lab=NULL) {
 	if (!is.null(pdfFile)) {
 		pdf(pdfFile)
 		par(mfcol=c(2,1))
@@ -360,7 +370,7 @@ plotDensity <- function(dat, rx=c(-4,6), controlIndex=NULL,
 		pmIndex <- 1:nrow(M)
 		if (is.null(lab)) lab <- colnames(dat)		
 	}
-	if (is.null(controlIndex)) controlIndex <- getControlIndex(dat)
+	if (is.null(controlIndex)) controlIndex <- getControlIndex(dat, controlProbes= controlProbes)
 	plotDensityMat(M, idx=pmIndex, xlab="M", lab=lab, 
 		main=paste(main,"\nAll probes"), rx=rx)
 	plotDensityMat(M, idx=pmIndex[controlIndex], xlab="M", lab=lab, 
