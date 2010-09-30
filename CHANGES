@@ -1,3 +1,6 @@
+v1.1.22 
+Speed improvements from Harris Jaffee to countGC, spatialAdjustAtom, spatialAdjust, spatialAdjustVec, as.image
+
 v1.1.21
 replaced oligo::basecontent with Biostrings::alphabetFrequency in countGC
 

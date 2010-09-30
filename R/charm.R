@@ -536,14 +536,16 @@ diffAmpAdjustGC <- function (dat, adj){
 
 
     
-countGC <- function(dat, type="pm") {   
+countGC <- function(dat, type="pm", idx) {
     if (type=="pm") {
-        seqs=as.character(pmSequence(dat))
+        seqs <- pmSequence(dat)
     } else if (type=="bg") {
-        seqs=as.character(bgSequence(dat))            
+        seqs <- bgSequence(dat)
     } else {
         stop("Invalid type. Choose 'pm' or 'bg'\n")
     }
+    if (!missing(idx))
+        seqs <- seqs[idx]
     tmp <- alphabetFrequency(seqs, baseOnly=TRUE)
 	tmp[,"C"] + tmp[,"G"]
 }
@@ -674,6 +676,18 @@ qcReport <- function(dat, file=NULL, utRange=c(30,100), enRange=c(8,12), numProb
     return(as.data.frame(cbind(pmSignal, sd1, sd2)))
 }
 
+as.image <- function(Z, ind, nx, ny, na.rm=TRUE) {
+        if (!na.rm)
+                return(as.image.fast(Z, ind, nx, ny))
+        my_mean <- function(X) base::mean(X, na.rm=TRUE)
+        list(x = 1:ny, y = 1:nx, z = tapply(Z, list(ind[,1], ind[,2]),
+                FUN=my_mean))
+}
+
+as.image.fast <- function(Z, ind, nx, ny)
+        list(x = 1:ny, y = 1:nx, z = tapply(Z, list(ind[,1], ind[,2]),
+                FUN=mean))
+
 
 arrayImage <- function(x,y,z, view="2d", blockSize=50) {
     if (is.null(dim(z))) z <- as.matrix(z)
@@ -725,7 +739,7 @@ arrayPlot <- function(imgs, xlab="NULL", r=NULL) {
 pmQuality <- function(dat, channel="channel1", verbose=FALSE, idx=NULL) {
 	# TODO: parallelize
 	if (is.null(idx)) idx <- 1:length(pmindex(dat))
-    Ngc <- countGC(dat, "pm")[idx]
+    Ngc <- countGC(dat, "pm", idx)
     bgNgc <- countGC(dat, "bg")  
 	pmIndex <- pmindex(dat)
 	bgIndex <- bgindex(dat)
@@ -806,48 +820,62 @@ countSeq <- function(subject, chr, start, end, seq) {
 ###################
 ## spatialAdjust ##
 ###################
-spatialAdjustAtom <- function(x, d, na) {
-	for (i in 1:ncol(x)) {
-			x[!na,i] <- 2^(spatialAdjustVec(log2(x[!na,i]), d)$zAdj) 
-			#gc()
-		}
-	return(x)
+spatialAdjustAtom <- function(x, d, I) {    
+        for (j in 1:ncol(x)) {
+                        x[I,j] <- 2^(spatialAdjustVec(log2(x[I,j]), d)$zAdj)
+                }
+        return(x)
 }
 
 spatialAdjust <- function(dat, copy=TRUE, blockSize, theta=1) {
-	if(missing(blockSize)) blockSize <- getBlockSize(dat)
-	c1 <- assayDataElement(dat, "channel1")
-	c2 <- assayDataElement(dat, "channel2")
-	X <- Y <- rep(NA, nrow(c1))
-	pmi <- pmindex(dat)
-	bgi <- bgindex(dat)
-    X[pmi] <- getX(dat, "pm")
-    Y[pmi] <- getY(dat, "pm")
-	X[bgi] <- getX(dat, "bg")  
-	Y[bgi] <- getY(dat, "bg")  
-	nx <- max(X, na.rm=TRUE)/blockSize
-	ny <- max(Y, na.rm=TRUE)/blockSize
-	na <- is.na(X) & is.na(Y)
-	d <- discretize.image(cbind(Y[!na], X[!na]), m=ny, n=nx)
-	c1 <- oApply(c1, copy=copy, fn=spatialAdjustAtom, d=d, na=na)
-	c2 <- oApply(c2, copy=copy, fn=spatialAdjustAtom, d=d, na=na)
-	assayDataElement(dat, "channel1") <- c1
-	assayDataElement(dat, "channel2") <- c2	
-	return(dat)
+        if(missing(blockSize)) blockSize <- getBlockSize(dat)
+        c1 <- assayDataElement(dat, "channel1")
+        c2 <- assayDataElement(dat, "channel2")
+        X <- Y <- rep(NA, nrow(c1))
+
+        pmi <- pmindex(dat)
+        X[pmi] <- getX(dat, "pm")
+        Y[pmi] <- getY(dat, "pm")
+        bgi <- bgindex(dat)
+        X[bgi] <- getX(dat, "bg")
+        Y[bgi] <- getY(dat, "bg")
+
+        # HJ
+        nax <- which(is.na(X))
+        nay <- which(is.na(Y))
+        # sanity checks
+        stopifnot(identical(nax, nay))
+        stopifnot(length(X) == length(pmi)+length(bgi)+length(nax))
+
+        I <- sort(c(pmi, bgi))
+        nx <- max(X, na.rm=TRUE)/blockSize
+        ny <- max(Y, na.rm=TRUE)/blockSize
+        d <- discretize.image(cbind(Y[I], X[I]), m=ny, n=nx)
+
+        # HJ
+        c1 <- oApply(c1, copy=copy, fn=spatialAdjustAtom, d=d, I=I)
+        c2 <- oApply(c2, copy=copy, fn=spatialAdjustAtom, d=d, I=I)
+        assayDataElement(dat, "channel1") <- c1
+        assayDataElement(dat, "channel2") <- c2
+        return(dat)
 }
 
+
 spatialAdjustVec <- function(z, d, ims=NULL, theta=1) {
-	if (is.null(ims)) {
-		im <- as.image(z, ind=d$index, nx=d$m, ny=d$n, na.rm=TRUE)
-		ims <- image.smooth(im, theta=theta)
-	}
-	adj <- ims$z - median(ims$z)
-	adjV <- as.vector(t(adj))
-	ind <- d$index
-	idx <- (ind[,1]-1)*d$n + ind[,2]
-	zAdj <- z - adjV[idx]
-	return(list(zAdj=zAdj, ims=ims))
+        if (is.null(ims)) {
+                # HJ -- accept NAs in the data at the probes of interest
+                #im <- as.image(z, ind=d$index, nx=d$m, ny=d$n, na.rm=TRUE)
+                im <- as.image.fast(z, ind=d$index, nx=d$m, ny=d$n)
+                ims <- image.smooth(im, theta=theta)
+        }
+        adj <- ims$z - median(ims$z)
+        adjV <- as.vector(t(adj))
+        ind <- d$index
+        idx <- (ind[,1]-1)*d$n + ind[,2]
+        zAdj <- z - adjV[idx]
+        return(list(zAdj=zAdj, ims=ims))
 }
+
 
 
 
