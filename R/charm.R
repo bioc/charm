@@ -257,10 +257,11 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		if (is.null(controlIndex)) controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
-		if(returnM=="FALSE") 
+		if(returnM=="FALSE") {
 			plotDensity(retval, main="5. Percentage methylation", 
 			rx=c(0,1), lab=plotDensityGroups, controlIndex=controlIndex,
-                       controlProbes=controlProbes)
+                       controlProbes=controlProbes) 
+                }
 		dev.off()		
 	}
 	rm(dat)
@@ -357,6 +358,8 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 #################
 plotDensity <- function(dat, rx=c(-4,6), controlIndex=NULL, 
 		controlProbes=NULL, pdfFile=NULL, main=NULL, lab=NULL) {
+
+        if(is.null(controlIndex) & is.null(controlProbes)) stop("Either controlIndex or controlProbes argument must be provided to plotDensity.")
 	if (!is.null(pdfFile)) {
 		pdf(pdfFile)
 		par(mfcol=c(2,1))
@@ -453,16 +456,16 @@ getMap <- function (x, m, affinity=NULL, df = 5)
 
 
 
-getControlIndex <- function(dat, 
-		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-		noCpGWindow=1000, subject, onlyGood=FALSE, matrix=TRUE) {
+getControlIndex <- function(dat, controlProbes=NULL, noCpGWindow=1000, subject, 
+                            onlyGood=FALSE, matrix=TRUE) {
     if (missing(subject)) {
 		file <- file.path(system.file(package = annotation(dat)), 
 		    "data", "controlIndex.rda")
 		if (file.exists(file)) {
 		    load(file)
 		} else {
-        	controlIndex <- which(getContainer(dat) %in% controlProbes)
+                    if(is.null(controlProbes)) stop("controlProbes argument must be provided to getControlIndex if subject argument not used.")
+        	    controlIndex <- which(getContainer(dat) %in% controlProbes)
 		}
     } else {
         if (class(subject)!="BSgenome")
@@ -485,12 +488,21 @@ getControlIndex <- function(dat,
 
 
 
-diffAmpEstGC <- function(dat, method="median", controlProbes="CONTROL_REGIONS", smooth=2) {
+diffAmpEstGC <- function(dat, method="median", controlIndex=NULL, controlProbes=NULL, smooth=2) {
+
+        if(is.null(controlIndex) & is.null(controlProbes)) stop("Either controlIndex or controlProbes argument must be provided to diffAmpEstGC.")
+
     #kern <- function(u, type="epanechnikov", smooth=1) {
     #    ifelse(abs(u)<smooth, (1/smooth) * (3/4) * (1-(u/smooth)^2), 0)
     #}
     Ngc <- countGC(dat, "pm")
-    controlIndex <- which(getContainer(dat)%in%controlProbes)
+
+    if (is.null(controlIndex)) {
+        #controlIndex <- getControlIndex(dat, controlProbes = controlProbes)
+        ##same as:
+        controlIndex <- which(getContainer(dat)%in%controlProbes)
+    }
+
     ngc <- Ngc[controlIndex]
     datPm <- log2(pm(dat)) 
     M <- datPm[,,"channel1"] - datPm[,,"channel2"] 
@@ -985,12 +997,14 @@ bgAdjust <- function(dat, copy=TRUE) {
 ############################
 normalizeWithinSamples <- function (dat, copy=TRUE, method = "loess",
  	scale = c(0.99, 0.99), 
-	controlProbes = c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-	controlIndex = NULL, approx = TRUE, breaks = 1000, 
+	controlProbes = NULL, controlIndex = NULL, 
+        approx = TRUE, breaks = 1000, 
     verbose = FALSE) 
 {
+    if(is.null(controlIndex) & is.null(controlProbes)) stop("Either controlIndex or controlProbes argument must be provided to normalizeWithinSamples.")
+
     if (grepl("gc", method)) {
-        mAdj <- diffAmpEstGC(dat, method = method, controlProbes = controlProbes)
+        mAdj <- diffAmpEstGC(dat, method = method, controlIndex=controlIndex, controlProbes = controlProbes)
         dat <- diffAmpAdjustGC(dat, mAdj)
     }
     if (grepl("loess", method)) {
@@ -1054,11 +1068,13 @@ predictLoess <- function(fit, newdata, approx=TRUE, breaks=1000) {
 	return(ret)
 }
 
-normalizeLoess <- function(dat, copy=TRUE, controlIndex=NULL, 
-		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), span=0.3,
-		by="A", approx=TRUE, breaks=1000) {
+normalizeLoess <- function(dat, copy=TRUE, 
+                           controlIndex=NULL, controlProbes=NULL, 
+                           span=0.3, by="A", approx=TRUE, breaks=1000) {
+
+        if(is.null(controlIndex) & is.null(controlProbes)) stop("Either controlIndex or controlProbes argument must be provided to normalizeLoess.")
 	if (is.null(controlIndex)) {
-    	controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
+    	    controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
 	}
 	pmIndex=pmindex(dat)
 	c1 <- assayDataElement(dat, "channel1")
@@ -1157,10 +1173,11 @@ SQNff <- function (y, copy=TRUE, log2=FALSE, N.mix = 5, ctrl.id, idx,
 
 normalizeBetweenSamples <- function(dat, copy=TRUE,
 		m="allQuantiles", untreated="none", enriched="none", 
-		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-		controlIndex=NULL, excludeIndex=NULL, verbose=FALSE) {    
-	if(ncol(dat)>1) {
+		controlProbes=NULL, controlIndex=NULL, 
+                excludeIndex=NULL, verbose=FALSE) {
 
+        if(is.null(controlIndex) & is.null(controlProbes) & enriched=="sqn") stop("Either controlIndex or controlProbes argument must be provided to normalizeBetweenSamples if using sqn normalization.")
+	if(ncol(dat)>1) {
 		c1 <- assayDataElement(dat, "channel1")
 		c2 <- assayDataElement(dat, "channel2")
 	    if (copy & "ff_matrix" %in% class(c1)) {
