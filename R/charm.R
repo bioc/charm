@@ -165,7 +165,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		plotDensity=NULL, plotDensityGroups=NULL) {
 
         if(!is.null(excludeIndex)) if(!inherits(excludeIndex,c("numeric","integer"))) stop("excludeIndex argument, if not NULL, must be a numeric or integer vector.")
-        if(!any(controlProbes%in%getContainer(dat))) stop("Invalid controlProbes argument: no such values not found for this array.")
+        if(!any(controlProbes%in%getContainer(dat)) & is.null(controlIndex)) stop("Invalid controlProbes argument: no such values not found for this array.")
 
 	if(!is.null(plotDensity)) {
 		pdf(file=plotDensity, height=11, width=8)
