@@ -5,7 +5,13 @@ v1.3.1
 Fixed bug in methp that caused an error when controlProbes was unspecified and the control probe container annotation was not one of the defaults.
 
 v1.3.0
-Version number bumped for BioC 2.7 release. No code changes. 
+Version number (devel) bumped for BioC 2.7 release. No code changes. 
+
+v1.2.1
+Fixed bug in methp that caused an error when controlProbes was unspecified and the control probe container annotation was not one of the defaults.
+
+v1.2.0
+Version number (release) bumped for BioC 2.7 release. No code changes. 
 
 v1.1.24
 Added controlProbes as an argument to plotDensity, and specified it when plotDensity is called in methp.  Also added an error if none of the values given as the controlProbes argument to methp are in getContainer(dat).  Also, the column order in the object returned by readCharm is now the same as the UT-channel file order provided by the user.
