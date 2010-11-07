@@ -1,3 +1,6 @@
+v1.3.3
+Modified bgAdjustParameters. Arrays with low numbers of background probes in certain GC bins ended up with unreasonable bg estimates resulting in NAs after background correction.
+
 v1.3.2
 Made controlProbes=NULL the default instead of c("CONTROL_PROBES","CONTROL_REGIONS") in diffAmpEstGC, normalizeWithinSamples, normalizeBetweenSamples, normalizeLoess, plotDensity, and getControlIndex.  Also added an error message if both controlIndex and controlProbes are NULL and the function needs one of them.
 

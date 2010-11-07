@@ -930,11 +930,14 @@ max.density <- function(x, n.pts = 2^14, min.points=30) { # From affy
 # with background probes
 bgAdjustParameters <- function (pm, bgpm, Ngc, bgNgc, n.pts = 2^14) 
 {
+    drop <- as.numeric(names(which(table(bgNgc)<50)))
+    bgNgc[bgNgc %in% drop] <- NA
     pmbg <- max.density(bgpm, n.pts)
     pmbg.gc <- tapply(bgpm, bgNgc, max.density, n.pts) # Get mode for each GC bin
-    l<-loess(pmbg.gc~as.numeric(names(pmbg.gc)), control = loess.control(surface = "direct")) 
-    x <- 1:max(Ngc)
-    mubg.gc <- predict(l,(x))
+    #l<-loess(pmbg.gc~as.numeric(names(pmbg.gc)), control = loess.control(surface = "direct")) 
+    #x <- 1:max(Ngc)
+    #mubg.gc <- predict(l,(x))
+    mubg.gc <- approx(as.numeric(names(pmbg.gc)), pmbg.gc, 1:max(Ngc), rule=2)$y
     bg.data <- bgpm[bgpm < pmbg]
     pmbg <- max.density(bg.data, n.pts)
     bg.data <- bgpm[bgpm < pmbg]
