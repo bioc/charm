@@ -123,7 +123,7 @@ A list with
 \item{chr }{a vector of chromosomes corresponding to the rows of p and l}
 \item{pos }{a vector of positions corresponding to the rows of p and l}
 \item{pns }{a vector of probe region names corresponding to the rows of p and l}
-\item{controlIndex }{a vector of control probe indices}
+\item{index }{a vector identifying which subset of the input probes (i.e. which elements of the input chr, pos, and pns, and rows of the input p and/or l) were used to search for DMRs.  The output objects (chr, pos, pns, p, l, etc) are this subset of probes from the input.  Therefore, e.g., while tabs$indexStart:tabs$indexEnd indexes the elements or rows of the output objects for each DMR candidate in tabs, index[tabs$indexStart:tabs$indexEnd] indexes the elements or rows of the input objects.}
 \item{gm }{if paired=FALSE, group medians of the l matrix}
 \item{DD }{if paired=TRUE, a list of within-pair differences for each comparison}
 \item{sMD }{if paired=TRUE, a matrix of smoothed mean within-pair differences for each comparison}

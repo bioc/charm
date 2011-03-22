@@ -1833,7 +1833,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
       if(sortBy=="avg.diff") res[[r]]=res[[r]][order(-diff),]
       if(sortBy=="max.diff") res[[r]]=res[[r]][order(-maxdiff),]
       if(!is.null(removeIf)) res[[r]]=subset(res[[r]],subset=!eval(removeIf))
-      message(nrow(res[[r]])," DMR candidates found using cutoff=",cutoff[r],".")
+      if(verbose) message(nrow(res[[r]])," DMR candidates found using cutoff=",cutoff[r],".")
   }
   if(verbose) message("\nDone")
   if(!paired){

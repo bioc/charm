@@ -1,3 +1,6 @@
+v1.3.4
+Updated the help file for dmrFinder to remove controlIndex from the description of output objects, and replaced it with the description of the index output.
+
 v1.3.3
 Modified bgAdjustParameters. Arrays with low numbers of background probes in certain GC bins ended up with unreasonable bg estimates resulting in NAs after background correction.
 
