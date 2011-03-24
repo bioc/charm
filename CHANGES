@@ -1,3 +1,6 @@
+v1.3.6
+Updated documentation for normalizeWithinSamples, normalizeBetweenSamples and getControlIndex to fix codoc error.
+
 v1.3.5
 Added references to vignette. Added a CITATION file. Updated documentation for normalizeWithinSamples and methp. 
  

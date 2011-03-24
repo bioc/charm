@@ -9,8 +9,7 @@ Within-sample (between-channel) normalization for two-color DNA methylation micr
 \usage{
 normalizeWithinSamples(dat, copy=TRUE, 
 	method = "loess", scale=c(0.99, 0.99), 
-	controlProbes = c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-	controlIndex = NULL, approx=TRUE, breaks=1000, verbose=FALSE)
+	controlProbes = NULL, controlIndex = NULL, approx=TRUE, breaks=1000, verbose=FALSE)
 }
 
 \arguments{

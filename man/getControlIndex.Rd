@@ -7,8 +7,7 @@ Get indices of control probes from CpG-free regions
 Get indices of control probes from CpG-free regions. 
 }
 \usage{
-getControlIndex(dat, controlProbes = c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-	noCpGWindow = 1000, subject, onlyGood = FALSE, matrix = TRUE)
+getControlIndex(dat, controlProbes = NULL, noCpGWindow = 1000, subject, onlyGood = FALSE, matrix = TRUE)
 }
 \arguments{
   \item{dat}{
