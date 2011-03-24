@@ -17,7 +17,7 @@
 
 \begin{document}
 \title{Using the charm package to estimate DNA methylation levels and find differentially methylated regions}
-\date{March, 2010}
+\date{March, 2011}
 \author{Martin Aryee\footnote{aryee@jhu}, Peter Murakami, Rafael Irizarry}
 \maketitle
 \begin{center}
@@ -32,7 +32,7 @@ options(prompt="R> ")
 
 \section{Introduction}
 
-The Bioconductor package \Rpackage{charm} can be used to analyze DNA methylation data generated using McrBC fractionation and two-color Nimblegen microarrays. It is customized for use with the from the custom CHARM microarray \cite{IrizarryGenomeRes2008}, but can also be applied to many other Nimblegen designs. 
+The Bioconductor package \Rpackage{charm} can be used to analyze DNA methylation data generated using McrBC fractionation and two-color Nimblegen microarrays. It is customized for use with data the from the custom CHARM microarray \cite{IrizarryGenomeRes2008}, but can also be applied to many other Nimblegen designs. The preprocessing and normalization methods are described in detail in \cite{AryeeBiostatistics2011}.
 
 Functions include:
 \begin{itemize}

@@ -1,0 +1,13 @@
+citEntry(entry = "Article",
+         "author" = "Martin J. Aryee et al.",
+         "title" = "Accurate genome-scale percentage DNA methylation estimates from microarray data",
+         journal = "Bioinformatics",
+         volume = "12",
+         number = "2",
+         year = "2011",
+         pages = "197-210",
+         doi = "http://dx.doi.org/10.1093/biostatistics/kxq055",
+         publisher = "Oxford University Press",
+         address = "Oxford, UK",
+         textVersion = "Aryee MJ et al., A Framework for Oligonucleotide Microarray Preprocessing, Biostatistics (2011) 12(2): 197-210"
+) 

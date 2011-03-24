@@ -4,7 +4,7 @@
 Within-sample normalization for two-color data
 }
 \description{
-Within-sample (between-channel) normalization for two-color DNA methylation microarray data.
+Within-sample (between-channel) normalization for two-color DNA methylation microarray data. This function implements the control probe loess procedure described in Aryee et al., 2011 (PMID: 20858772).
 }
 \usage{
 normalizeWithinSamples(dat, copy=TRUE, 

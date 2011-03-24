@@ -1,3 +1,6 @@
+v1.3.5
+Added references to vignette. Added a CITATION file. Updated documentation for normalizeWithinSamples and methp. 
+ 
 v1.3.4
 Updated the help file for dmrFinder to remove controlIndex from the description of output objects, and replaced it with the description of the index output.
 
