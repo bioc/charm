@@ -1,3 +1,6 @@
+v.1.5.1 
+Bumped the version number
+
 v1.3.8
 Moved the definition of the args object inside the dmrFinder function so that it is earlier in the function.
 
