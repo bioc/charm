@@ -1613,6 +1613,12 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
   groups = as.character(groups)
   if(paired & is.null(DD) & is.null(pairs)) stop("pairs argument must be provided if paired=TRUE.")
   if(paired & is.null(DD) & length(pairs)!=length(groups)) stop("pairs argument must be same length as groups.")
+
+  args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
+	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,
+            controlProbes=controlProbes, cutoff=cutoff, sortBy=sortBy,
+            compare=compare, paired=paired, pairs=pairs, removeIf=removeIf)
+
   if(!paired | is.null(DD)){ #then the compare arg will be used.
       if(identical(compare,"all")) compare=comp(groups)
       if(length(compare)%%2!=0) stop("compare must have an even number of elements.")
@@ -1621,11 +1627,6 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
       if(!all(compare%in%groups)) stop("Not all groups specified in the compare argument are in the groups argument.")
   }
   if(paired) require(genefilter) #for rowVars in get.tt.paired
-  
-  args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
-	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,
-            controlProbes=controlProbes, cutoff=cutoff, sortBy=sortBy,
-            compare=compare, paired=paired, pairs=pairs, removeIf=removeIf)
 
   # dmrFinder must be given either eset or p/l,chr,pos,pns, and package.
   # If eset is supplied then all the latter will be taken from it (with any

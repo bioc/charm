@@ -1,3 +1,6 @@
+v1.3.8
+Moved the definition of the args object inside the dmrFinder function so that it is earlier in the function.
+
 v1.3.7
 Correction to the CITATION file.
 
