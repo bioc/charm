@@ -109,8 +109,8 @@ A list with
 		\item{m1}{if paired=FALSE, p=NULL and l!=NULL, average methylation l (logit(percentage methylation) if l=NULL) of all probes between start and end for group 1}
 		\item{m2}{if paired=FALSE, p=NULL and l!=NULL, average methylation l (logit(percentage methylation) if l=NULL) of all probes between start and end for group 2}
 		\item{regionName}{name of the tiling region in which the DMR is found (These names come from the NDF file)}
-		\item{indexStart}{index of first probe in DMR}
-		\item{indexEnd}{index of last probe in DMR}
+		\item{indexStart}{index of first probe in DMR.  This indexes the output of dmrFinder, *not* the input.}
+		\item{indexEnd}{index of last probe in DMR.  This indexes the output of dmrFinder, *not* the input.}
                 \item{nprobes}{number of probes for the DMR, i.e., indexEnd-indexStart+1}
                 \item{diff}{average percentage methylation difference within the DMR if paired=FALSE, and average l (logit(percentage) methylation if l=NULL) difference within the DMR if paired=TRUE}
                 \item{maxdiff}{maximum percentage methylation difference within the DMR if paired=FALSE, and maximum l (logit(percentage) methylation if l=NULL) difference within the DMR if paired=FALSE}
