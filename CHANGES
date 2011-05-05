@@ -1,3 +1,6 @@
+v1.5.3 
+Removed the pattern argument of ff() when creating ff objects so that temporary files get saved only temporarily when creating ff objects.
+
 v.1.5.2
 Added to the documentation of the indexStart and indexEnd columns of the tabs matrix object output of dmrFinder.
 

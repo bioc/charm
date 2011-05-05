@@ -33,12 +33,10 @@ setMethod("oApply", "ff_matrix",
     	stopifnot(ldStatus())
 	    if (copy) {
 			open(object1)
-	        out1 <- clone(object1, pattern = file.path(ldPath(), 
-	            "cloned-"))
+	        out1 <- clone(object1)
 			if (!missing(object2)) {
 				open(object2)
-	        	out2 <- clone(object2, pattern = file.path(ldPath(), 
-	            	"cloned-"))
+	        	out2 <- clone(object2)
 			}
 	    }
 	    else {
@@ -767,8 +765,7 @@ pmQuality <- function(dat, channel="channel1", verbose=FALSE, idx=NULL) {
 	bgIndex <- bgindex(dat)
 	x <- assayDataElement(dat, channel)
 	if ("ff_matrix" %in% class(x)) {
-		ret <- ff(vmode="double", dim=c(length(idx), ncol(x)),
-			pattern=file.path(ldPath(), "pmq-"))
+		ret <- ff(vmode="double", dim=c(length(idx), ncol(x)))
 	} else {
 		ret <- matrix(nrow=length(idx), ncol=ncol(x))
 	}
@@ -1186,8 +1183,8 @@ normalizeBetweenSamples <- function(dat, copy=TRUE,
 	    if (copy & "ff_matrix" %in% class(c1)) {
 			open(c1)
 			open(c2)
-	        c1 <- clone(c1, pattern = file.path(ldPath(), "cloned-"))
-			c2 <- clone(c2, pattern = file.path(ldPath(), "cloned-"))
+	        c1 <- clone(c1)
+			c2 <- clone(c2)
 	    }
 	
 		if (is.null(excludeIndex)) {
@@ -1271,8 +1268,7 @@ setMethod("quantileNormalize", c(object="TilingFeatureSet"),
 		M <- quantileNormalize(M, copy=FALSE, idx=idx)	
 		c1 <- assayDataElement(object, "channel1")
 		if (copy & "ff_matrix" %in% class(c1)) {
-			c1 <- clone(c1, pattern = file.path(ldPath(), 
-			"cloned-"))
+			c1 <- clone(c1)
 		}
 		fn <- function(x) 2^x
 		c2 <- combine(c1, M, "-", transform1="log2", invTransform=fn)
@@ -1360,8 +1356,7 @@ methPercent <- function(m, pmIndex, ngc, commonParams=TRUE) {
 	## TODO: add parallel support 
 	if ("ff_matrix" %in% class(m)) {
 		open(m)
-		ret <- ff(vmode="double", dim=c(length(pmIndex), ncol(m)),
-			pattern=file.path(ldPath(), "methPercent-"))
+		ret <- ff(vmode="double", dim=c(length(pmIndex), ncol(m)))
 	} else {
 		ret <- matrix(nrow=length(pmIndex), ncol=ncol(m))
 	}
