@@ -1,3 +1,6 @@
+v1.5.4
+Moved some of the content of the plotting functions in R/dmrPlotting.R into functions, which were added to the end of the file.
+
 v1.5.3 
 Removed the pattern argument of ff() when creating ff objects so that temporary files get saved only temporarily when creating ff objects.
 

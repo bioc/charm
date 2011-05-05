@@ -29,57 +29,9 @@ if(all.lines)   stopifnot(length(colors.l)==length(unique(FACS)))
 if(!all.points) stopifnot(length(colors.p)%in%c(2, length(unique(FACS))))
 if(!all.lines)  stopifnot(length(colors.l)%in%c(2, length(unique(FACS))))
 
-if(dmr$package %in% 
-          c("pd.feinberg.hg18.me.hx1", 
-            "pd.feinberg.hg18.me.hx1.noxy", 
-            "pd.0701.hg18.tile.05.hx1.v2", 
-            "pd.0701.hg18.tile.05.hx1.charmed", 
-            "pd.charm.hg18.example",
-            "pd.081229.hg18.promoter.medip.hx1")) {
-        spec="human"; build="hg18"
-       } else if(dmr$package %in% 
-          c("pd.feinberg.mm8.me.hx1", 
-            "pd.2006.07.18.mm8.refseq.promoter")) {
-        spec="mouse"; build="mm8"
-       } else if (dmr$package %in% 
-          c("pd.091020.hg19.charm.hx1", 
-            "pd.091117.hg19.charm.hd4.hx1",
-            "pd.100428.hg19.charm.hx1")){
-        spec="human"; build="hg19"
-       } else if (dmr$package %in% 
-          c("pd.2006.10.31.rn34.refseq.promoter",
-            "pd.090519.rn34.charm.hx1")) {
-        spec="rat"; build="rn4"    
-       } else { 
-         stop("This array design not accomodated yet.") 
-       }
-
-if(spec=="human"){
-    require(paste("BSgenome.Hsapiens.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="hg18"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Hsapiens-hg18.rda")
-    } else if(build=="hg19"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Hsapiens-hg19.rda")
-    }
-}
-if(spec=="mouse"){
-    require(paste("BSgenome.Mmusculus.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="mm8"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Mmusculus-mm8.rda")
-    } else if(build=="mm9"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Mmusculus-mm9.rda")
-    }
-}
-if(spec=="rat") {
-    require(paste("BSgenome.Rnorvegicus.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="rn4"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Rnorvegicus-rn4.rda")
-    }
-}
-load(con)
-close(con)
-cpg.cur = cgi
-ocpgi=data.frame(chr=I(cpg.cur[,1]), start=as.numeric(cpg.cur[,2]), end=as.numeric(cpg.cur[,3]))
+sb = getsb(dmr$package)
+spec = sb[1]; build=sb[2]
+ocpgi = get_islands(spec=spec,build=build)
 chr=dmr$chr
 ocpgi=ocpgi[ocpgi$chr%in%unique(as.character(chr)),]
 
@@ -166,17 +118,19 @@ for(object.i in which.table[has]){
       thechr=obj$chr[i]
       if(is.null(buffer)) ADD=max(ADD1*2,obj$end[i]-obj$start[i]+132) else ADD=buffer
       start=floor((obj$start[i]+obj$end[i])/2)-ADD
-      end=start+2*ADD
+      end  =start+2*ADD
     
       Index=Indexes[[obj$index[i]]]
       x=pos[Index] 
       start=max(start,min(x))
-      end=min(end,max(x))
+      end  =min(end,max(x))
       
       Index=Index[x>=start & x <= end]
       Index=Index[order(pos[Index])]
+      start=min(pos[Index])
+      end  =max(pos[Index])
       
-      ##PLOT TISSUES
+      ##PLOT METHYLATION:
       #par(mfrow=c(3,1))
       #layout(matrix(1:3,ncol=1),heights=c(0.6,0.2,0.2))
       layout(matrix(1:2,ncol=1),heights=c(0.6,0.2))
@@ -185,9 +139,7 @@ for(object.i in which.table[has]){
 
       matplot(pos[Index],M[Index,showpts],col=tcols,cex=0.6,ylim=YLIM,xlab="",
               xaxt="n",ylab=ylabel,xlim=c(start,end),lty=1,las=1)
-      
       matlines(pos[Index],sMM[Index,comps.l],lwd=2,lty=1,col=cl)
-      
       abline(h=0,lwd=2,lty=3)
       abline(h=1,lwd=2,lty=3)
       abline(v=obj$start[i],lty=2)
@@ -199,31 +151,8 @@ for(object.i in which.table[has]){
       legend("topright",nms[comps.l],col=cl,lty=1,lwd=2,cex=legend.size,bg="white")
       
       ##PLOT CPG ISLANDS
-      par(mar=c(3.5,3.5,0.25,1.1))
-      if(spec=="human") seq<-Hsapiens[[as.character(thechr) ]]
-      if(spec=="mouse") seq<-Mmusculus[[as.character(thechr) ]]
-      if(spec=="rat")   seq<-Rnorvegicus[[as.character(thechr) ]]
-      Index=max(start,1):min(end,length(seq))
-      #subseq<-seq[Index]  #using older version of Biostrings. For newer:
-      subseq<-subseq(seq,start=Index[1],end=Index[length(Index)])
-      cpgs=start(matchPattern("CG",subseq))+Index[1]-1
-      ##mcrbc=sort(c(start(matchPattern("ACG",subseq))+Index[1]-1,
-      ##  start(matchPattern("GCG",subseq))+Index[1]-1))
-      cuts=seq(min(Index),max(Index),8)
-      scpgs=cut(cpgs,cuts,include.lowest=TRUE)
-      x = (cuts[1:(length(cuts)-1)]+cuts[2:(length(cuts))])/2
-      y = table(scpgs)/8
-      SPAN=400/diff(range(x))
-      d = loess(y~x,span=SPAN,degree=1)
-      plot(x,d$fitted,type="l",ylim=c(0,0.15),xlab="Location",
-           ylab="CpG density",xlim=c(start,end),las=1)
-      Rug(cpgs)
-    ##  Rug(mcrbc,side=3)
-      Index1 = which(ocpgi[,1]==as.character(thechr) &
-                     ((ocpgi[,2] > start & ocpgi[,2]< end) |
-                      (ocpgi[,3] > start & ocpgi[,3]< end)))
-      if(length(Index1)>0)
-          sapply(Index1,function(j) Rug(unlist(ocpgi[j,2:3]),col=5,lwd=3,side=1))
+      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, spec=spec, mcrbc=TRUE, 
+               mar=c(3.5,3.5,0.25,1.1))
 
       mtext(paste("ID:",i,"--",as.character(thechr),":",start,"-",end,sep=""),
             side=3,cex=1.5,outer=TRUE)
@@ -252,57 +181,9 @@ stopifnot(length(colors.p)==ncol(sMD))
 if(all.lines)  stopifnot(length(colors.l)==ncol(sMD))
 if(!all.lines) stopifnot(length(colors.l)%in%c(1, ncol(sMD)))
 
-if(dmr$package %in% 
-          c("pd.feinberg.hg18.me.hx1", 
-            "pd.feinberg.hg18.me.hx1.noxy", 
-            "pd.0701.hg18.tile.05.hx1.v2", 
-            "pd.0701.hg18.tile.05.hx1.charmed", 
-            "pd.charm.hg18.example",
-            "pd.081229.hg18.promoter.medip.hx1")) {
-        spec="human"; build="hg18"
-       } else if(dmr$package %in% 
-          c("pd.feinberg.mm8.me.hx1", 
-            "pd.2006.07.18.mm8.refseq.promoter")) {
-        spec="mouse"; build="mm8"
-       } else if (dmr$package %in% 
-          c("pd.091020.hg19.charm.hx1", 
-            "pd.091117.hg19.charm.hd4.hx1",
-            "pd.100428.hg19.charm.hx1")){
-        spec="human"; build="hg19"
-       } else if (dmr$package %in% 
-          c("pd.2006.10.31.rn34.refseq.promoter",
-            "pd.090519.rn34.charm.hx1")) {
-        spec="rat"; build="rn4"    
-       } else { 
-         stop("This array design not accomodated yet.") 
-       }
-
-if(spec=="human"){
-    require(paste("BSgenome.Hsapiens.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="hg18"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Hsapiens-hg18.rda")
-    } else if(build=="hg19"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Hsapiens-hg19.rda")
-    }
-}
-if(spec=="mouse"){
-    require(paste("BSgenome.Mmusculus.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="mm8"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Mmusculus-mm8.rda")
-    } else if(build=="mm9"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Mmusculus-mm9.rda")
-    }
-}
-if(spec=="rat") {
-    require(paste("BSgenome.Rnorvegicus.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="rn4"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Rnorvegicus-rn4.rda")
-    }
-}
-load(con)
-close(con)
-cpg.cur = cgi
-ocpgi=data.frame(chr=I(cpg.cur[,1]), start=as.numeric(cpg.cur[,2]), end=as.numeric(cpg.cur[,3]))
+sb = getsb(dmr$package)
+spec = sb[1]; build=sb[2]
+ocpgi = get_islands(spec=spec,build=build)
 chr=dmr$chr
 ocpgi=ocpgi[ocpgi$chr%in%unique(as.character(chr)),]
 
@@ -358,17 +239,19 @@ for(object.i in which.table[has]){
       thechr=obj$chr[i]
       if(is.null(buffer)) ADD=max(ADD1*2,obj$end[i]-obj$start[i]+132) else ADD=buffer
       start=floor((obj$start[i]+obj$end[i])/2)-ADD
-      end=start+2*ADD
+      end  =start+2*ADD
     
       Index=Indexes[[obj$index[i]]]
       x=pos[Index] 
       start=max(start,min(x))
-      end=min(end,max(x))
+      end  =min(end,max(x))
       
       Index=Index[x>=start & x <= end]
       Index=Index[order(pos[Index])]
+      start=min(pos[Index])
+      end  =max(pos[Index])
       
-      ##PLOT TISSUES
+      ##PLOT METHYLATION:
       #par(mfrow=c(3,1))
       #layout(matrix(1:3,ncol=1),heights=c(0.6,0.2,0.2))
       layout(matrix(1:2,ncol=1),heights=c(0.6,0.2))
@@ -381,9 +264,7 @@ for(object.i in which.table[has]){
       for(ppi in plotpoints){
           matpoints(pos[Index],DD[[ppi]][Index,],col=colors.p[ppi],cex=0.6)
       }
-      
       matlines(pos[Index],sMD[Index,comps.l],lwd=2,lty=1,col=cl)
-      
       abline(h=0,lwd=2,lty=3)
       abline(v=obj$start[i],lty=2)
       abline(v=obj$end[i],lty=2)
@@ -399,31 +280,8 @@ for(object.i in which.table[has]){
       }
       
       ##PLOT CPG ISLANDS
-      par(mar=c(3.5,3.5,0.25,1.1))
-      if(spec=="human") seq<-Hsapiens[[as.character(thechr) ]]
-      if(spec=="mouse") seq<-Mmusculus[[as.character(thechr) ]]
-      if(spec=="rat")   seq<-Rnorvegicus[[as.character(thechr) ]]
-      Index=max(start,1):min(end,length(seq))
-      #subseq<-seq[Index]  #using older version of Biostrings. For newer:
-      subseq<-subseq(seq,start=Index[1],end=Index[length(Index)])
-      cpgs=start(matchPattern("CG",subseq))+Index[1]-1
-      ##mcrbc=sort(c(start(matchPattern("ACG",subseq))+Index[1]-1,
-      ##  start(matchPattern("GCG",subseq))+Index[1]-1))
-      cuts=seq(min(Index),max(Index),8)
-      scpgs=cut(cpgs,cuts,include.lowest=TRUE)
-      x = (cuts[1:(length(cuts)-1)]+cuts[2:(length(cuts))])/2
-      y = table(scpgs)/8
-      SPAN=400/diff(range(x))
-      d = loess(y~x,span=SPAN,degree=1)
-      plot(x,d$fitted,type="l",ylim=c(0,0.15),xlab="Location",
-           ylab="CpG density",xlim=c(start,end), las=1)
-      Rug(cpgs)
-    ##  Rug(mcrbc,side=3)
-      Index1 = which(ocpgi[,1]==as.character(thechr) &
-                     ((ocpgi[,2] > start & ocpgi[,2]< end) |
-                      (ocpgi[,3] > start & ocpgi[,3]< end)))
-      if(length(Index1)>0)
-          sapply(Index1,function(j) Rug(unlist(ocpgi[j,2:3]),col=5,lwd=3,side=1))
+      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, spec=spec, mcrbc=TRUE, 
+               mar=c(3.5,3.5,0.25,1.1))
 
       mtext(paste("ID:",i,"--",as.character(thechr),":",start,"-",end,sep=""),
             side=3,cex=1.5,outer=TRUE)
@@ -471,59 +329,11 @@ Indexes=split(seq(along=pns),pns)
 chr=dmr$chr
 pos=dmr$pos
 
-if(dmr$package %in% 
-          c("pd.feinberg.hg18.me.hx1", 
-            "pd.feinberg.hg18.me.hx1.noxy", 
-            "pd.0701.hg18.tile.05.hx1.v2", 
-            "pd.0701.hg18.tile.05.hx1.charmed", 
-            "pd.charm.hg18.example",
-            "pd.081229.hg18.promoter.medip.hx1")) {
-        spec="human"; build="hg18"
-       } else if(dmr$package %in% 
-          c("pd.feinberg.mm8.me.hx1", 
-            "pd.2006.07.18.mm8.refseq.promoter")) {
-        spec="mouse"; build="mm8"
-       } else if (dmr$package %in% 
-          c("pd.091020.hg19.charm.hx1", 
-            "pd.091117.hg19.charm.hd4.hx1",
-            "pd.100428.hg19.charm.hx1")){
-        spec="human"; build="hg19"
-       } else if (dmr$package %in% 
-          c("pd.2006.10.31.rn34.refseq.promoter",
-            "pd.090519.rn34.charm.hx1")) {
-        spec="rat"; build="rn4"    
-       } else { 
-         stop("This array design not accomodated yet.") 
-       }
-
-if(spec=="human"){
-    require(paste("BSgenome.Hsapiens.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="hg18"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Hsapiens-hg18.rda")
-    } else if(build=="hg19"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Hsapiens-hg19.rda")
-    }
-}
-if(spec=="mouse"){
-    require(paste("BSgenome.Mmusculus.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="mm8"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Mmusculus-mm8.rda")
-    } else if(build=="mm9"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Mmusculus-mm9.rda")
-    }
-}
-if(spec=="rat") {
-    require(paste("BSgenome.Rnorvegicus.UCSC.",build,sep=""), character.only=TRUE)
-    if(build=="rn4"){
-        con <- url("http://rafalab.jhsph.edu/CGI/CGI-Rnorvegicus-rn4.rda")
-    }
-}
-load(con)
-close(con)
-cpg.cur = cgi
-ocpgi=data.frame(chr=I(cpg.cur[,1]), start=as.numeric(cpg.cur[,2]), end=as.numeric(cpg.cur[,3]))
+sb = getsb(dmr$package)
+spec = sb[1]; build=sb[2]
+ocpgi = get_islands(spec=spec,build=build)
 chr=dmr$chr
-ocpgi=ocpgi[ocpgi$chr%in%unique(as.character(chr)),] 
+ocpgi=ocpgi[ocpgi$chr%in%unique(as.character(chr)),]
 
 if(is.null(dmr$p) | !plot.p) {
     gmp = dmr$gm[,which.groups]
@@ -551,7 +361,7 @@ for(i in intersect(which.plot,1:nrow(tab))) {
       ylabel="p"
   }
 
-  ##PLOT TISSUES:
+  ##PLOT METHYLATION:
   thechr = tab$chr[i]
   Index=which(dmr$chr== thechr) #only that one large chr11 region could cause trouble here.
   Index=Index[which(dmr$pos[Index]>=tab$start[i]-buffer & dmr$pos[Index]<=tab$end[i]+buffer)]
@@ -568,7 +378,6 @@ for(i in intersect(which.plot,1:nrow(tab))) {
 
   matplot(dmr$pos[Index], M[Index,wh], col=cl[th], lty=1, ylab=ylabel, ylim=YLIM, cex=.6, xlab="position", xlim=c(start,end), xaxt="n", las=1)
   matlines(dmr$pos[Index],sMM[Index,comps.l],lwd=2,lty=1,col=cl)
-
   abline(h=0,lwd=2,lty=3)
   abline(h=1,lwd=2,lty=3)
   abline(v=tab$start[i],lty=2)
@@ -576,31 +385,8 @@ for(i in intersect(which.plot,1:nrow(tab))) {
   legend("topright",colnames(sMM)[comps.l],col=cl,lty=1,lwd=2,cex=legend.size)
 
       ##PLOT CPG ISLANDS
-      par(mar=c(3.5,3.5,0.25,1.1))
-      if(spec=="human") seq<-Hsapiens[[as.character(thechr) ]]
-      if(spec=="mouse") seq<-Mmusculus[[as.character(thechr) ]]
-      if(spec=="rat")   seq<-Rnorvegicus[[as.character(thechr) ]]
-      Index=max(start,1):min(end,length(seq))
-      #subseq<-seq[Index]  #using older version of Biostrings. For newer:
-      subseq<-subseq(seq,start=Index[1],end=Index[length(Index)])
-      cpgs=start(matchPattern("CG",subseq))+Index[1]-1
-      ##mcrbc=sort(c(start(matchPattern("ACG",subseq))+Index[1]-1,
-      ##  start(matchPattern("GCG",subseq))+Index[1]-1))
-      cuts=seq(min(Index),max(Index),8)
-      scpgs=cut(cpgs,cuts,include.lowest=TRUE)
-      x = (cuts[1:(length(cuts)-1)]+cuts[2:(length(cuts))])/2
-      y = table(scpgs)/8
-      SPAN=400/diff(range(x))
-      d = loess(y~x,span=SPAN,degree=1)
-      plot(x,d$fitted,type="l",ylim=c(0,0.15),xlab="Location",
-           ylab="CpG density",xlim=c(start,end), las=1)
-      Rug(cpgs)
-    ##  Rug(mcrbc,side=3)
-      Index1 = which(ocpgi[,1]==as.character(thechr) &
-                     ((ocpgi[,2] > start & ocpgi[,2]< end) |
-                      (ocpgi[,3] > start & ocpgi[,3]< end)))
-      if(length(Index1)>0)
-          sapply(Index1,function(j) Rug(unlist(ocpgi[j,2:3]),col=5,lwd=3,side=1))
+      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, spec=spec, mcrbc=TRUE, 
+               mar=c(3.5,3.5,0.25,1.1))
       
         mtext(paste("ID:",tab$id[i],"--",as.character(thechr),":",tab$start[i],"-",tab$end[i],sep=""),
               side=3,cex=1.5,outer=TRUE)
@@ -667,4 +453,101 @@ Rug <- function (x, ticksize = 0.03, side = 1, lwd = 0.5, col = par("fg"),
     }
     Axis(side = side, at = x, labels = FALSE, lwd = lwd, col = col, 
         tck = ticksize, ...)
+}
+
+getsb <- function(package) {
+    if(package %in% 
+          c("pd.feinberg.hg18.me.hx1", 
+            "pd.feinberg.hg18.me.hx1.noxy", 
+            "pd.0701.hg18.tile.05.hx1.v2", 
+            "pd.0701.hg18.tile.05.hx1.charmed", 
+            "pd.charm.hg18.example",
+            "pd.081229.hg18.promoter.medip.hx1")) {
+        spec="human"; build="hg18"
+       } else if(package %in% 
+          c("pd.feinberg.mm8.me.hx1", 
+            "pd.100512.mm8.charm.hx1",
+            "pd.2006.07.18.mm8.refseq.promoter")) {
+        spec="mouse"; build="mm8"
+       } else if (package %in% 
+          c("pd.091020.hg19.charm.hx1", 
+            "pd.091117.hg19.charm.hd4.hx1",
+            "pd.100428.hg19.charm.hx1")){
+        spec="human"; build="hg19"
+       } else if (package %in% 
+          c("pd.2006.10.31.rn34.refseq.promoter",
+            "pd.090519.rn34.charm.hx1")) {
+        spec="rat"; build="rn4"    
+       } else if (package %in% 
+          c("pd.100811.rhesus.charm.tiling.hx1")) { 
+        spec="rhesus"; build="rheMac2"
+       } else stop("This array design not accomodated yet.") 
+    c(spec,build)
+}
+
+get_islands <- function(spec, build) {
+    if(spec=="human") {
+        require(paste("BSgenome.Hsapiens.UCSC.",build,sep=""), character.only=TRUE)
+        if(build=="hg18") {
+            cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-hg18.txt", as.is=TRUE)
+        } else if(build=="hg19") {
+            cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-hg19.txt", as.is=TRUE)
+        } else { stop("Only builds hg18 and hg19 are currently supported for human.") }
+    }
+
+    if(spec=="mouse") {
+        require(paste("BSgenome.Mmusculus.UCSC.",build,sep=""), character.only=TRUE)
+        if(build=="mm8") {
+            cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-mm8.txt", as.is=TRUE)
+        } else if(build=="mm9") {
+            cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-mm9.txt", as.is=TRUE)
+        } else { stop("Only builds mm8 and mm9 are currently supported for mouse.") }
+    }
+    
+    if(spec=="rat") {
+        require(paste("BSgenome.Rnorvegicus.UCSC.",build,sep=""), character.only=TRUE)
+        if(build=="rn4") {
+            cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-rn4.txt", as.is=TRUE)
+        } else { stop("Only build rn4 is currently supported for rat.") }
+    }
+
+    if(spec=="rhesus") {
+        require(paste("BSgenome.Mmulatta.UCSC.",build,sep=""), character.only=TRUE)
+        if(build=="rheMac2") {
+            cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-rheMac2.txt", as.is=TRUE)
+        } else { stop("Only build rheMac2 is currently supported for rhesus.") }
+    }
+
+    data.frame(chr=I(cpg.cur[,1]), start=as.numeric(cpg.cur[,2]), end=as.numeric(cpg.cur[,3]))
+}
+
+plot_CpG <- function(thechr,xx,ocpgi,spec,mcrbc=TRUE,mar=c(3.5,3.5,0.25,1.1)) {
+      ##PLOT CPG ISLANDS AND MCRBC RECOGNITION SITES:
+      par(mar=mar)
+      if(spec=="human")  seq<-Hsapiens[[thechr]]
+      if(spec=="mouse")  seq<-Mmusculus[[thechr]]
+      if(spec=="rat")    seq<-Rnorvegicus[[thechr]]
+      if(spec=="rhesus") seq<-Mmulatta[[thechr]]
+      Index2=c(min(xx),max(xx))
+      if(Index2[1]<1 | Index2[2]>length(seq)) stop("position outside length of chromosome.")
+      subseq<-subseq(seq,start=Index2[1],end=Index2[2])
+      cpgs=start(matchPattern("CG",subseq))+Index2[1]-1
+      ##Find the C in ACG or GCG if mcrbc=TRUE:
+      if(mcrbc) Mcrbc=sort(c(start(matchPattern("ACG",subseq))+Index2[1],
+                             start(matchPattern("GCG",subseq))+Index2[1]))
+      cuts=seq(Index2[1],Index2[2],8)
+      scpgs=cut(cpgs,cuts,include.lowest=TRUE)
+      x = (cuts[1:(length(cuts)-1)]+cuts[2:(length(cuts))])/2
+      y = table(scpgs)/8
+      SPAN2=400/diff(range(x))
+      d = loess(y~x,span=SPAN2,degree=1)
+      plot(x,d$fitted,type="l",ylim=c(0,0.15),xlab="Location",
+           ylab="CpG density",xlim=Index2,las=1)
+      Rug(cpgs)
+      if(mcrbc) Rug(Mcrbc,side=3)
+      Index1 = which(ocpgi[,"chr"]==as.character(thechr) &
+                   ((ocpgi[,"start"] > min(xx) & ocpgi[,"start"]< max(xx)) |
+                    (ocpgi[,"end"  ] > min(xx) & ocpgi[,"end"]  < max(xx))))
+      if(length(Index1)>0)
+          sapply(Index1,function(j) Rug(unlist(ocpgi[j,c("start","end")]),col="red",lwd=3,side=1))
 }
