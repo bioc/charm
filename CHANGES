@@ -1,3 +1,6 @@
+v1.5.5
+Changed the default minimum number of probes for a dmr in dmrFinder from 2 to 3.
+
 v1.5.4
 Moved some of the content of the plotting functions in R/dmrPlotting.R into functions, which were added to the end of the file.
 

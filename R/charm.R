@@ -1602,7 +1602,7 @@ get.tt <- function(lm,ls,ns,filter,Indexes,COMPS,ws,verbose){
 }
 
 
-dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, removeIf=expression(nprobes<2),...){
+dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, removeIf=expression(nprobes<3),...){
 
   if(!is.null(removeIf) & !is.expression(removeIf)) stop("If not NULL, removeIf argument must be an expression.")
   groups = as.character(groups)
