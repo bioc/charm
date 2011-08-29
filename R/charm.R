@@ -2044,7 +2044,7 @@ validatePd <- function(pd, fileNameColumn, sampleNameColumn,
 
 
 .onAttach <- function(libname, pkgname) {
-	message("Welcome to charm version ", 
+	packageStartupMessage("Welcome to charm version ", 
 		packageDescription("charm", field="Version"))
 	ocSamples(1)
 	ldPath(tempdir())

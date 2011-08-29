@@ -13,7 +13,7 @@ dmrFinder(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL,
 	filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  
 	withinSampleNorm="loess", betweenSampleNorm="quantile", 
 	cutoff=0.995, sortBy="ttarea",paired=FALSE,pairs=NULL,DD=NULL,COMPS=NULL,
-        removeIf=expression(nprobes<2),...)
+        removeIf=expression(nprobes<3),...)
 }
 \arguments{
   \item{eset}{
