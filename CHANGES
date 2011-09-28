@@ -1,3 +1,6 @@
+v1.5.7
+Renamed max.density to maxDensity and exported it
+
 v1.5.5
 Changed the default minimum number of probes for a dmr in dmrFinder from 2 to 3.
 

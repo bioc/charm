@@ -908,8 +908,9 @@ getBlockSize <- function(dat, probesPerBlock=1250) {
 	return(blockSize)
 }
 
-max.density <- function(x, n.pts = 2^14, min.points=30) { # From affy
-        if (length(x) >= min.points) {
+maxDensity <- function(x, n.pts = 2^14, minPoints=30) { 
+# Slightly modified version of the max.density function in affy
+        if (length(x) >= minPoints) {
             aux <- density(x, kernel = "epanechnikov", n = n.pts, 
                 na.rm = TRUE)
             aux$x[order(-aux$y)[1]]
@@ -929,20 +930,20 @@ bgAdjustParameters <- function (pm, bgpm, Ngc, bgNgc, n.pts = 2^14)
 {
     drop <- as.numeric(names(which(table(bgNgc)<50)))
     bgNgc[bgNgc %in% drop] <- NA
-    pmbg <- max.density(bgpm, n.pts)
-    pmbg.gc <- tapply(bgpm, bgNgc, max.density, n.pts) # Get mode for each GC bin
+    pmbg <- maxDensity(bgpm, n.pts)
+    pmbg.gc <- tapply(bgpm, bgNgc, maxDensity, n.pts) # Get mode for each GC bin
     #l<-loess(pmbg.gc~as.numeric(names(pmbg.gc)), control = loess.control(surface = "direct")) 
     #x <- 1:max(Ngc)
     #mubg.gc <- predict(l,(x))
     mubg.gc <- approx(as.numeric(names(pmbg.gc)), pmbg.gc, 1:max(Ngc), rule=2)$y
     bg.data <- bgpm[bgpm < pmbg]
-    pmbg <- max.density(bg.data, n.pts)
+    pmbg <- maxDensity(bg.data, n.pts)
     bg.data <- bgpm[bgpm < pmbg]
     bg.data <- bg.data - pmbg
     bgsd <- sqrt(sum(bg.data^2)/(length(bg.data) - 1)) * sqrt(2)
     sig.data <- pm[pm > pmbg]
     sig.data <- sig.data - pmbg
-    expmean <- max.density(sig.data, n.pts)
+    expmean <- maxDensity(sig.data, n.pts)
     alpha <- 1/expmean
     mubg <- pmbg
     list(alpha = alpha, mu = mubg, mu.gc = mubg.gc, sigma = bgsd)
@@ -1386,7 +1387,7 @@ methPercent <- function(m, pmIndex, ngc, commonParams=TRUE) {
 ## Calculate E(Y|S)
 logmethParameters <- function (pm, ngc, n.pts = 2^14) 
 {
-    #max.density <- function(x, n.pts) {
+    #maxDensity <- function(x, n.pts) {
     #    aux <- density(x, kernel = "epanechnikov", n = n.pts, 
     #        na.rm = TRUE)
     #    aux$x[order(-aux$y)[1]]
@@ -1401,7 +1402,7 @@ logmethParameters <- function (pm, ngc, n.pts = 2^14)
     sig.data <- sig.data - pmbg
     #cat("Debug logmethParameters(): sig.data =", 
     #    100*round(length(sig.data)/length(pm), 2), "%\n")
-    #expmean <- max.density(sig.data, n.pts)
+    #expmean <- maxDensity(sig.data, n.pts)
 	expmean <- mean(sig.data, na.rm=TRUE)
     alpha <- 1/expmean
     mubg <- pmbg
