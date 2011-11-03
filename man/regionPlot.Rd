@@ -7,7 +7,7 @@ Plot user-supplied genomic regions.
 Plot any given genomic regions from tiling microarray data.
 }
 \usage{
-regionPlot(tab, dmr, outfile, which.plot, which.groups=colnames(dmr$gm), cl=2:(ncol(dmr$gm)+1), legend.size=1, buffer=3000, plot.p=TRUE)
+regionPlot(tab, dmr, outfile, which.plot, which.groups=colnames(dmr$gm), cl=1+1:ncol(dmr$gm), legend.size=1, buffer=3000, plot.p=TRUE)
 }
 \arguments{
   \item{tab}{

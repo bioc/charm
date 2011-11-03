@@ -40,10 +40,10 @@ vector of region names for the probes in eset, p or l
 not currently implemented
 }
   \item{controlIndex}{
-vector of indices of non-CpG control probes
+vector of indices of non-CpG control probes (which can be obtained using getControlIndex), to be passed on to the methp function if neither the p nor the l arguments are provided, in which case either this or the controlProbes argument must be provided.
 }
   \item{controlProbes}{
-not currently used
+names of probe containers corresponding to control probes (e.g., see values returned by getContainer), to be passed on to the methp function if neither the p nor the l arguments are provided, in which case either this or the controlIndex argument must be provided.
 }
   \item{Indexes}{
 not currently used

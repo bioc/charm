@@ -35,9 +35,9 @@ importFrom(utils, packageDescription, setTxtProgressBar,
 
 
 export(bgAdjust, countGC, cpgdensity, dmrFdr, dmrFinder, dmrPlot, 
-	regionPlot, getControlIndex, maxDensity,
+	regionPlot, getControlIndex, maxDensity, pmQuality,
 	methPercent, methp, normalizeBetweenSamples, normalizeWithinSamples,
-	plotDensity, qcReport, readCharm, spatialAdjust, validatePd)
+	plotDensity, qcReport, readCharm, spatialAdjust, validatePd, controlQC, cmdsplot)
 
 # oligo exports (should we import oligo instead?)	 
 export(pmindex, bgindex)

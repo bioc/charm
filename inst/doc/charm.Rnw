@@ -17,7 +17,7 @@
 
 \begin{document}
 \title{Using the charm package to estimate DNA methylation levels and find differentially methylated regions}
-\date{March, 2011}
+\date{November, 2011}
 \author{Martin Aryee\footnote{aryee@jhu}, Peter Murakami, Rafael Irizarry}
 \maketitle
 \begin{center}
@@ -40,6 +40,7 @@ Functions include:
 \item Finding suitable control probes for normalization
 \item Percentage methylation estimates
 \item Identification of differentially methylated regions
+\item Plotting of differentially methylated regions
 \end{itemize}
 
 As input we will need raw Nimblegen data (.xys) files and a corresponding annotation package built with pdInfoBuilder. This vignette uses the following packages:
@@ -90,10 +91,10 @@ The \Rcode{validatePd} function can be used to validate the sample description f
 res <- validatePd(pd)
 @
 
-Now we read in the raw data. The \Rcode{readCharm} command makes the assumption (unless told otherwise) that the two xys files for a sample have the same file name up to the suffixes 532.xys (untreated) and 635.xys (methyl-depleted).
+Now we read in the raw data. The \Rcode{readCharm} command makes the assumption (unless told otherwise) that the two xys files for a sample have the same file name up to the suffixes 532.xys (untreated) and 635.xys (methyl-depleted).  The sampleNames argument is optional.
 
 <<readData>>=
-rawData <- readCharm(files=pd$filename, path=dataDir, sampleKey=pd)
+rawData <- readCharm(files=pd$filename, path=dataDir, sampleKey=pd, sampleNames=pd$sampleID)
 rawData
 @ 
 
@@ -114,13 +115,39 @@ The PDF quality report is shown in Appendix A. Three quality metrics are calcula
 \item Methyl-depleted channel signal standard deviation.
 \end{enumerate}
 
+To remove samples with a quality score less than 78, we could do this:
+
+<<Remove low-quality samples>>=
+qc.min = 78
+##Remove arrays with quality scores below qc.min:
+rawData=rawData[,qual$pmSignal>=qc.min]
+qual=qual[qual$pmSignal>=qc.min,]
+pd=pd[pd$sampleID%in%rownames(qual),]
+pData(rawData)$qual=qual$pmSignal
+@
+
+and to identify which probes have a mean quality score above 75 we could do this:
+
+<<pmQuality>>=
+pmq = pmQuality(rawData)
+rmpmq = rowMeans(pmq)
+okqc = which(rmpmq>75)
+@
+
 \section{Percentage methylation estimates and differentially methylated regions (DMRs)}
 
 We now calculate probe-level percentage methylation estimates for each sample. As a first step we need to identify a suitable set of unmethylated control probes from CpG-free regions to be used in normalization.
 
 <<getControlIndex>>=
 library(BSgenome.Hsapiens.UCSC.hg18)
-ctrlIdx <- getControlIndex(rawData, subject=Hsapiens)
+ctrlIdx <- getControlIndex(rawData, subject=Hsapiens, noCpGWindow=600)
+@
+
+We can check the success of the control probes by comparing their intensity distribution with the non-control probes (before any normalization in which the control probes are used).  
+
+<<controlQC>>=
+controlQC(rawData=rawData, controlIndex=ctrlIdx, IDcol="sampleID", expcol="tissue", ylimits=c(-6,8),
+          outfile="boxplots_check.pdf", height=7, width=9)
 @
 
 The minimal code required to estimate methylation would be \Rcode{p <- methp(rawData, controlIndex=ctrlIdx)}. However, it is often useful to get \Rcode{methp} to produce a series of diagnostic density plots to help identify non-hybridization quality issues. The \Rcode{plotDensity} option specifies the name of the output pdf file, and 
@@ -133,22 +160,57 @@ p <- methp(rawData, controlIndex=ctrlIdx,
 head(p)
 @
 
-The density plots are shown in Appendix B. 
+For a simple unsupervised clustering of the samples, we can plot the results of a classical multi-dimensional scaling analysis.
+<<cmdsplot>>=
+cmdsplot(labcols=c("red","black","blue"), expcol="tissue", rawData=rawData, p=p, okqc=okqc, noXorY=TRUE, outfile="cmds_topN.pdf", topN=c(100000,1000))
+@
+
+The density plots are shown in Appendix B and the MDS plot is shown in Appendix C.
 
 We can now identify differentially methylated regions using \Rcode{dmrFinder}:
 
 <<dmrFinder, results=hide>>=
 dmr <- dmrFinder(rawData, p=p, groups=grp, 
-	compare=c("colon", "liver",
-	  		  "colon", "spleen"))
+	compare=c("colon", "liver","colon", "spleen"),
+        removeIf=expression(nprobes<4 | abs(diff)<.05 | abs(maxdiff)<.05))
 @
 <<headDmr>>=	
 names(dmr)
 names(dmr$tabs)
 head(dmr$tabs[[1]])
 @
-
 When called without the \Rcode{compare} option, \Rcode{dmrFinder} performs all pairwise comparisons between the groups. 
+
+We can also plot DMR candidates with the dmrPlot function.  Here we plot just the top DMR candidate from the first DMR table.
+<<dmrPlot>>=
+dmrPlot(dmr=dmr, which.table=1, which.plot=c(1), legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l=c("blue","black","red"), colors.p=c("blue","black"), outpath=".")
+@
+
+We can also plot any given genomic regions using this data by using the regionPlot function, supplying the regions in a data frame that must have columns with names "chr", "start", and "end".  Naturally, regions that are not on the array will not appear in the resulting file.
+
+<<regionPlot>>=
+mytab = data.frame(chr=as.character(dmr$tabs[[1]]$chr[1]), start=as.numeric(c(dmr$tabs[[1]]$start[1])), end=as.numeric(c(dmr$tabs[[1]]$end[1])), stringsAsFactors=FALSE)
+regionPlot(tab=mytab, dmr=dmr, outfile="myregions.pdf", which.plot=1:5, which.groups=c("liver","colon"), cl=c("blue","black"), legend.size=1, buffer=3000)
+@
+
+The DMR plot is shown in Appendix D, and the plot of the user-provided region is shown in Appendix E.
+
+
+\section{Analysis of paired samples}
+If the samples are paired, we can also analyze them as such.  To show this, let's pretend that the samples in our test data set are paired, and then use the dmrFinder function with the ``paired" argument set to TRUE and the ``pairs" argument specifying which samples are pairs.  (In this example we also have to lower the cutoff since there are not enough samples to find any regions with the default cutoff of 0.995.)
+<<paired>>=
+pData(rawData)$pair = c(1,1,2,2,1,2)
+dmr2 <- dmrFinder(rawData, p=p, groups=grp, 
+	compare=c("colon", "liver","colon", "spleen"),
+        removeIf=expression(nprobes<4 | abs(diff)<.05 | abs(maxdiff)<.05),
+        paired=TRUE, pairs=pData(rawData)$pair, cutoff=0.95)
+@
+
+We plot the, say, third DMR with the dmrPlot function (shown in Appendix F)
+<<dmrPlot for paired analysis>>=
+dmrPlot(dmr=dmr2, which.table=1, which.plot=c(3), legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l=c("blue","black"), colors.p=c("blue","black"), outpath=".")
+@
+
 
 \bibliography{charmVignette}{}
 \bibliographystyle{plain}
@@ -160,6 +222,20 @@ When called without the \Rcode{compare} option, \Rcode{dmrFinder} performs all p
 Each row corresponds to one stage of the normalization process (Raw data, After spatial and background correction, after within-sample normalization, after between-sample normalization, percentage methylation estimates). The left column shows all probes, while the right column shows control probes.
 \includepdf{density.pdf}
 
+\section{Appendix C: MDS plot}
+\includepdf{cmds_topN.pdf}
+
+\section{Appendix D: DMR plot}
+DMR plot for the first DMR in the list. 
+\includepdf{colon-liver.pdf}
+
+\section{Appendix E: Plot of an arbitrary genomic region}
+For the arbtirary region we just chose the first DMR.
+\includepdf{myregions.pdf}
+
+\section{Appendix F: DMR plot from analysis of paired samples}
+DMR plot for the third DMR in the list
+\includepdf{colon-liver_paired.pdf}
  
 \section{Details}
 

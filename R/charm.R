@@ -760,7 +760,7 @@ pmQuality <- function(dat, channel="channel1", verbose=FALSE, idx=NULL) {
 	# TODO: parallelize
 	if (is.null(idx)) idx <- 1:length(pmindex(dat))
     Ngc <- countGC(dat, "pm", idx)
-    bgNgc <- countGC(dat, "bg")  
+    bgNgc <- countGC(dat, "bg")
 	pmIndex <- pmindex(dat)
 	bgIndex <- bgindex(dat)
 	x <- assayDataElement(dat, channel)

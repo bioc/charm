@@ -52,6 +52,7 @@ Martin Aryee <aryee@jhu.edu>
 		rawData <- readCharm(path=dataDir, files=pd$filename,
 			 sampleKey=pd)
 		ctrlIdx <- getControlIndex(rawData, subject=Hsapiens)
-		plotDensity(rawData, controlIndex=ctrlIdx, pdfFile="density.pdf")	
+                ## Not run:
+		#plotDensity(rawData, controlIndex=ctrlIdx, pdfFile="density.pdf")	
 	}
 }

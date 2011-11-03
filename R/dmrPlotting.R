@@ -3,12 +3,12 @@
 dmrPlot <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", plot.p=TRUE) {
   
     if(is.null(dmr$DD)) {
-        if(missing(colors.p)) colors.p=2:(length(unique(dmr$groups))+1)
-        if(missing(colors.l)) colors.l=2:(length(unique(dmr$groups))+1)       
+        if(missing(colors.p)) colors.p=1+1:length(unique(dmr$groups))
+        if(missing(colors.l)) colors.l=1+1:length(unique(dmr$groups))       
         dmrPlot_unpaired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath, plot.p=plot.p)
     } else {
-        if(missing(colors.p)) colors.p = 2:(ncol(dmr$sMD)+1)
-        if(missing(colors.l)) colors.l = 2:(ncol(dmr$sMD)+1)
+        if(missing(colors.p)) colors.p = 1+1:ncol(dmr$sMD)
+        if(missing(colors.l)) colors.l = 1+1:ncol(dmr$sMD)
         dmrPlot_paired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath, plot.p=plot.p)
     }
     
@@ -23,11 +23,11 @@ if(length(dmr$tabs)<max(which.table)) stop("which.table specifies more compariso
 if(!is.null(buffer) & !inherits(buffer,c("numeric","integer"))) stop("if provided, buffer must be numeric.")
 require(RColorBrewer)
 
+if(all.points)  stopifnot(length(colors.p)==length(unique(dmr$groups)))
+if(all.lines)   stopifnot(length(colors.l)==length(unique(dmr$groups)))
+if(!all.points) stopifnot(length(colors.p)%in%c(2, length(unique(dmr$groups))))
+if(!all.lines)  stopifnot(length(colors.l)%in%c(2, length(unique(dmr$groups))))
 FACS=dmr$groups
-if(all.points)  stopifnot(length(colors.p)==length(unique(FACS)))
-if(all.lines)   stopifnot(length(colors.l)==length(unique(FACS)))
-if(!all.points) stopifnot(length(colors.p)%in%c(2, length(unique(FACS))))
-if(!all.lines)  stopifnot(length(colors.l)%in%c(2, length(unique(FACS))))
 
 sb = getsb(dmr$package)
 spec = sb[1]; build=sb[2]
@@ -174,12 +174,12 @@ if(length(dmr$tabs)<max(which.table)) stop("which.table specifies more compariso
 if(!is.null(buffer) & !inherits(buffer,c("numeric","integer"))) stop("if provided, buffer must be numeric.")
 require(RColorBrewer)
 
-sMD = dmr$sMD
 FACS = dmr$groups
-if(!all.points & length(colors.p)==1) colors.p=rep(colors.p,ncol(sMD))
-stopifnot(length(colors.p)==ncol(sMD))
-if(all.lines)  stopifnot(length(colors.l)==ncol(sMD))
-if(!all.lines) stopifnot(length(colors.l)%in%c(1, ncol(sMD)))
+if(!all.points & length(colors.p)==1) colors.p=rep(colors.p,ncol(dmr$sMD))
+stopifnot(length(colors.p)==ncol(dmr$sMD))
+if(all.lines)  stopifnot(length(colors.l)==ncol(dmr$sMD))
+if(!all.lines) stopifnot(length(colors.l)%in%c(1, ncol(dmr$sMD)))
+sMD = dmr$sMD
 
 sb = getsb(dmr$package)
 spec = sb[1]; build=sb[2]
@@ -210,7 +210,7 @@ for(object.i in which.table[has]){
     if(!any(colnames(obj)=="index")) obj$index=match(obj$regionName,names(Indexes))
 
     ################Make pdf file of plots###############
-    pdf(file.path(outpath,paste(names(tabs)[object.i],".pdf",sep="")),width=11,height=8,pointsize=10)
+    pdf(file.path(outpath,paste(names(tabs)[object.i],"_paired.pdf",sep="")),width=11,height=8,pointsize=10)
     palette(rev(brewer.pal(8,"Dark2")[c(2,1,3,4,8)]))
     ADD1=1500
 
@@ -307,7 +307,7 @@ cat("\nPlotting finished.\n")
 #buffer - how much to plot on either side of each region
 #plot.p - plot percentages or l
 
-regionPlot <- function(tab, dmr, outfile, which.plot, which.groups=colnames(dmr$gm), cl=2:(ncol(dmr$gm)+1), legend.size=1, buffer=3000, plot.p=TRUE) {
+regionPlot <- function(tab, dmr, outfile, which.plot, which.groups=colnames(dmr$gm), cl=1+1:ncol(dmr$gm), legend.size=1, buffer=3000, plot.p=TRUE) {
 
 if(!inherits(buffer,c("numeric","integer"))) stop("buffer must be numeric.")
 if(missing(tab)) stop("tab argument must be provided.")
@@ -550,4 +550,71 @@ plot_CpG <- function(thechr,xx,ocpgi,spec,mcrbc=TRUE,mar=c(3.5,3.5,0.25,1.1)) {
                     (ocpgi[,"end"  ] > min(xx) & ocpgi[,"end"]  < max(xx))))
       if(length(Index1)>0)
           sapply(Index1,function(j) Rug(unlist(ocpgi[j,c("start","end")]),col="red",lwd=3,side=1))
+}
+
+#####################################################
+#### Additional functions that produce plots:
+##Plot distribution of control and non-control probes, to check that they worked:
+controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,ylimits=c(-6,8),outfile="./boxplots_check.pdf",height=7,width=9) {
+    p2 = methp(rawData, betweenSampleNorm="none", withinSampleNorm=FALSE, scale=FALSE, returnM=TRUE, 
+               controlProbes=controlProbes, controlIndex=controlIndex) 
+    if(is.null(controlIndex)) {
+        if(is.null(controlProbes)) stop("if is.null(controlIndex), controlProbes must be provided.")
+        cont = getControlIndex(rawData, controlProbes=controlProbes)
+    } else cont = controlIndex
+    #stopifnot(identical(cont, which(getContainer(rawData)%in%controlProbes)))
+    stopifnot(length(getContainer(rawData))==nrow(p2))
+    ord = order(pData(rawData)[,expcol])
+    #tmp = sapply(strsplit(pData(rawData)[,"arrayUT"],"_"), function(x) x[1])
+    stopifnot(all(colnames(p2[,ord])==pData(rawData)[ord,IDcol]))
+
+    medm = apply(p2[-cont,ord],2,median)
+    medc = apply(p2[cont,ord],2,median)
+    medd = medm-medc
+
+    pdf(file=outfile, width=width, height=height)
+    par(mfrow=c(3,1))
+    boxplot(p2[-cont,ord], outline=FALSE, names=pData(rawData)[ord,IDcol], las=3,
+            ylab="M (no normalization)", main="non-control probes", cex.lab=1.5, ylim=ylimits)
+    abline(h=0,lty=3)
+    boxplot(p2[cont,ord], outline=FALSE, xaxt="n", las=3, ylab="M (no normalization)",
+            main="control probes", cex.lab=1.5, ylim=ylimits)
+    abline(h=0,lty=3)
+    plot(medd~c(1:ncol(p2[,ord])),main="median difference",xlab="",ylab="",las=3)
+    abline(h=0,lty=3)
+    dev.off()
+}
+
+cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, outfile="./cmds_topN.pdf", topN=c(100000,1000)) {
+    stopifnot(length(labcols)>=length(unique(pData(rawData)[,expcol])))
+    stopifnot(ncol(p)==nrow(pData(rawData)))
+    stopifnot(all(colnames(p)==rownames(pData(rawData))))
+
+    require(genefilter) #for rowSds()
+    thechr = pmChr(rawData)
+    thepos = pmPosition(rawData)
+    stopifnot(length(thechr)==length(pmindex(rawData)))
+    stopifnot(length(thechr)==nrow(p))
+
+    thechr = thechr[okqc]
+    thepos = thepos[okqc]
+    p = p[okqc,]
+    if(noXorY) p3=p[!thechr%in%c("chrX","chrY"),] else p3=p
+    
+    v = rowSds(p3)
+    o = order(v, decreasing=TRUE)
+    lcol = labcols[as.numeric(factor(rank(pData(rawData)[,expcol])))]
+    subt = paste("Does",ifelse(noXorY," not "," "),"use probes in sex chromosomes.",sep="")
+    pdf(file=outfile, width=7, height=7)
+    for(k in topN) {
+        message(k)
+        if(k=="all") k = nrow(p3) else k=as.numeric(k)
+        xlabel = paste("Using the",k,"most variable probes, out of",nrow(p3),"total.")
+        d = dist(t(p3[o[1:k],]))
+        cmds = cmdscale(d,k=2)
+        plot(cmds[,1], cmds[,2], xlab = xlabel, ylab = "", main = "cMDS", col=lcol, sub=subt)
+        tmp = tapply(lcol,pData(rawData)[,expcol],unique)
+        legend("topleft",pch=1,legend=names(tmp),col=tmp)
+    }    
+    dev.off()
 }

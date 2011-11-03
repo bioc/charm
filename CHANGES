@@ -1,3 +1,6 @@
+v1.7.1
+Updated dmrFinder help file.  Exported pmQuality.  Added controlQC and cmdsplot functions.  Revised error message in dmrPlot.  Updated the vignette.
+
 v1.5.7
 Renamed max.density to maxDensity and exported it
 

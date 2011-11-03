@@ -38,10 +38,10 @@ a numeric vector (x,y). The xth percentile of each sample is scaled to represent
 between-sample normalization method. Choices are "quantile", "sqn", and "none". See Details for more fine-grained control.
 }
   \item{controlProbes}{
-character string of the label assigned to non-CpG control probes in the annotation file (i.e. the container column of the .ndf file).
+character string of the label assigned to non-CpG control probes in the annotation file (i.e. the container column of the .ndf file) (getContainer reports the container values for the pm probes).  This is used only if controlIndex is not provided.  Either this or controlIndex must be provided.
 }
   \item{controlIndex}{
-a vector of non-CpG control probe indices
+a vector of non-CpG control probe indices (can be obtained using getControlIndex).  Either this or controlProbes must be provided.
 }
   \item{excludeIndex}{
 a vector of probe indices indicating which pm probes to ignore when creating normalization target distributions.

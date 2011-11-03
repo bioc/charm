@@ -50,6 +50,7 @@ Martin Aryee <aryee@jhu.edu>
 		dataDir <- system.file("data", package="charmData")
 		setwd(dataDir)
 		rawData <- readCharm(files=pd$filename, sampleKey=pd)
-		qcReport(rawData, file="qcReport.pdf")
+                ## Not run:
+		#qcReport(rawData, file="qcReport.pdf")
 	}
 }
