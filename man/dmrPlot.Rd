@@ -1,13 +1,13 @@
 \name{dmrPlot}
 \alias{dmrPlot}
 \title{
-Plot differentially methylated regions (DMRs)
+Plot differentially methylated regions (DMRs) found using the dmrFinder function.
 }
 \description{
-Plot differentially methylated regions (DMRs) from tiling microarray data.
+Plot differentially methylated regions (DMRs) from tiling microarray data that were identified using the dmrFinder function.  To plot DMRs identified using the dmrFind function, use the plotDMRs function.
 }
 \usage{
-dmrPlot(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", plot.p=TRUE)
+dmrPlot(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, mcrbc=TRUE, plotG=FALSE, dat=NULL, buffer=NULL, plot.p=TRUE)
 }
 \arguments{
   \item{dmr}{
@@ -37,6 +37,24 @@ a vector of point colors, one color for each group whose points are to be plotte
   \item{outpath}{
 where to save the output pdf file.
 }
+  \item{cpg.islands}{
+a table with columns "chr","start", and "end" for CpG islands to plot in the second panel.
+}
+  \item{Genome}{
+the BSgenome object for the organism based upon which your array was designed.
+}
+  \item{mcrbc}{
+TRUE to mark the location of mcrbc sites with ticks on the upper axis of the second panel.
+}
+  \item{plotG}{
+if TRUE, a third panel of each DMR plot will show the difference between the median green channel value (after subtracting probe medians and correcting for gc content) between the 2 groups. If true, dat must be provided.
+}
+  \item{dat}{
+if plotG=TRUE, this must be provided.  It is the TilingFeatureSet object used when estimating the matrix of percent methylation estimates used in dmrFinder when it produced dmr.
+}
+  \item{buffer}{
+Number of base pairs to plot on either side of each DMR candidate.
+}
   \item{plot.p}{
 set to FALSE if you want to plot the methlation values (the "l" output from dmrFinder) instead of the percentage methylation values (the "p" output).  If dmrFinder was run on l instead of p, plot.p=FALSE necessarily.
 }
@@ -51,7 +69,7 @@ This function plots the differentially methylated regions (DMRs).
 Martin Aryee <aryee@jhu.edu>, Peter Murakami, Rafael Irizarry
 }
 \seealso{
-\code{\link{regionPlot}}, \code{\link{dmrFinder}}, \code{\link{dmrFdr}}
+\code{\link{plotDMRs}}, \code{\link{regionPlot}}, \code{\link{dmrFinder}}, \code{\link{dmrFdr}}
 }
 \examples{
 # See dmrFdr

@@ -4,7 +4,7 @@
 Find differentially methylated regions (DMRs)
 }
 \description{
-Find differentially methylated regions (DMRs) from tiling microarray data.
+Find differentially methylated regions (DMRs) from tiling microarray data.  If you want to adjust for covariates (including batch effects estimated using SVA) or if your covariate of interest is continuous, use the dmrFind function.
 }
 \usage{
 dmrFinder(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL,
@@ -136,7 +136,7 @@ A list with
 Martin Aryee <aryee@jhu.edu>, Peter Murakami, Rafael Irizarry
 }
 \seealso{
-\code{\link{readCharm}}, \code{\link{methp}}, \code{\link{dmrFdr}}
+\code{\link{dmrFind}}, \code{\link{readCharm}}, \code{\link{methp}}, \code{\link{dmrFdr}}
 }
 \examples{
 # See dmrFdr

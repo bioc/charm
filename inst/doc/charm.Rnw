@@ -94,7 +94,8 @@ res <- validatePd(pd)
 Now we read in the raw data. The \Rcode{readCharm} command makes the assumption (unless told otherwise) that the two xys files for a sample have the same file name up to the suffixes 532.xys (untreated) and 635.xys (methyl-depleted).  The sampleNames argument is optional.
 
 <<readData>>=
-rawData <- readCharm(files=pd$filename, path=dataDir, sampleKey=pd, sampleNames=pd$sampleID)
+rawData <- readCharm(files=pd$filename, path=dataDir, sampleKey=pd, 
+                     sampleNames=pd$sampleID)
 rawData
 @ 
 
@@ -134,9 +135,7 @@ rmpmq = rowMeans(pmq)
 okqc = which(rmpmq>75)
 @
 
-\section{Percentage methylation estimates and differentially methylated regions (DMRs)}
-
-We now calculate probe-level percentage methylation estimates for each sample. As a first step we need to identify a suitable set of unmethylated control probes from CpG-free regions to be used in normalization.
+We now want to calculate probe-level percentage methylation estimates for each sample. As a first step we need to identify a suitable set of unmethylated control probes from CpG-free regions to be used in normalization.
 
 <<getControlIndex>>=
 library(BSgenome.Hsapiens.UCSC.hg18)
@@ -144,33 +143,147 @@ ctrlIdx <- getControlIndex(rawData, subject=Hsapiens, noCpGWindow=600)
 @
 
 We can check the success of the control probes by comparing their intensity distribution with the non-control probes (before any normalization in which the control probes are used).  
-
 <<controlQC>>=
-controlQC(rawData=rawData, controlIndex=ctrlIdx, IDcol="sampleID", expcol="tissue", ylimits=c(-6,8),
+controlQC(rawData=rawData, controlIndex=ctrlIdx, IDcol="sampleID", 
+          expcol="tissue", ylimits=c(-6,8),
           outfile="boxplots_check.pdf", height=7, width=9)
 @
 
-The minimal code required to estimate methylation would be \Rcode{p <- methp(rawData, controlIndex=ctrlIdx)}. However, it is often useful to get \Rcode{methp} to produce a series of diagnostic density plots to help identify non-hybridization quality issues. The \Rcode{plotDensity} option specifies the name of the output pdf file, and 
-the optional \Rcode{plotDensityGroups} can be used to give groups different colors.
+We can also access the probe annotation using standard functions from the oligo package.
+<<oligo_functions>>==
+chr = pmChr(rawData)
+pns = probeNames(rawData)
+pos = pmPosition(rawData)
+seq = pmSequence(rawData)
+pd  = pData(rawData)
+@
+
+\section{Percentage methylation estimates and differentially methylated regions (DMRs)}
+
+The minimal code required to estimate methylation would be \Rcode{p <- methp(rawData, controlIndex=ctrlIdx)}. However, it is often useful to get \Rcode{methp} to produce a series of diagnostic density plots to help identify non-hybridization quality issues. The \Rcode{plotDensity} option specifies the name of the output pdf file, and the optional \Rcode{plotDensityGroups} can be used to give groups different colors.
 
 <<methp_density>>=
-grp <- pData(rawData)$tissue
 p <- methp(rawData, controlIndex=ctrlIdx, 
-	plotDensity="density.pdf", plotDensityGroups=grp) 
+	   plotDensity="density.pdf", plotDensityGroups=pd$tissue) 
 head(p)
 @
 
 For a simple unsupervised clustering of the samples, we can plot the results of a classical multi-dimensional scaling analysis.
 <<cmdsplot>>=
-cmdsplot(labcols=c("red","black","blue"), expcol="tissue", rawData=rawData, p=p, okqc=okqc, noXorY=TRUE, outfile="cmds_topN.pdf", topN=c(100000,1000))
+cmdsplot(labcols=c("red","black","blue"), expcol="tissue", 
+         rawData=rawData, p=p, okqc=okqc, noXorY=TRUE, 
+         outfile="cmds_topN.pdf", topN=c(100000,1000))
 @
-
 The density plots are shown in Appendix B and the MDS plot is shown in Appendix C.
 
-We can now identify differentially methylated regions using \Rcode{dmrFinder}:
+\subsection{Pipeline 1 (recommended): Regression-based DMR-finding after correcting for batch effects}
 
+Optionally, we may wish to restrict our search for DMRs to non-control probes exceeding some quality threshold.  We may do that simply by subsetting:
+<<select_probes>>=
+Index = setdiff(which(rmpmq>75),ctrlIdx)
+Index = Index[order(chr[Index], pos[Index])]
+p0 = p #save for pipeline 2 example
+p = p[Index,]
+seq = seq[Index]
+chr = chr[Index]
+pos = pos[Index]
+pns = pns[Index]
+pns = clusterMaker(chr,pos) 
+@
+Using the \Rcode{clusterMaker} function was necessary in order to redefine the array regions since removing probes may result in too few probes per region or unacceptably large gaps between probes within the same region.  At this point it may also be helpful to remove arrays whose average correlation with all other arrays is below some threshold, since it is often reasonable to assume that most probes are not differentially methylated between arrays.  Unsupervised clustering would also probably tend to show such arrays as clustering separately.  Another reason for removing arrays at this point is if they have missing data on any of the covariates to be used in the following analysis.  Remember that any arrays excluded from this point forward should be removed from both \Rcode{p} and \Rcode{pd}.  
+
+To identify DMR candidates, we use the \Rcode{dmrFind} function.  As it requires the same \Rcode{mod} and \Rcode{mod0} arguments as the \Rcode{sva()} function from the \Rpackage{sva} package, we must first create these.  Data with paired samples may be accommodated by including the pair ID column as a factor in \Rcode{mod} and \Rcode{mod0}.
+<<mods>>=
+mod0 = matrix(1,nrow=nrow(pd),ncol=1)
+mod  = model.matrix(~1 +factor(pd$tissue,levels=c("liver","colon","spleen")))
+@
+
+We may now call \Rcode{dmrFind}.  Setting the \Rcode{coeff} argument to 2 means that we are interested in the colon-liver comparison, since it is the second column of \Rcode{mod} that defines that comparison in the linear model.
+<<dmrFind>>=
+thedmrs = dmrFind(p=p, mod=mod, mod0=mod0, coeff=2, pns=pns, chr=chr, pos=pos)
+@
+
+To compare liver and spleen, set \Rcode{coeff} to 3.  To compare colon and spleen, you must redefine \Rcode{mod} such that the first level is either colon or spleen, and then set \Rcode{coeff} appropriately, e.g., 
+\Rcode{mod  = model.matrix(~1 + factor(pd\$tissue, levels=c("colon","spleen","liver")))} and \Rcode{coeff=2}.  Also note that if you adjust for covariates, their effects will be controlled for when finding DMRs, however their effects are not removed from the matrix of "cleaned" percent methylation estimates (i.e., \Rcode{cleanp}) returned by \Rcode{dmrFind}, which by default removes only batch effects (i.e., the surrogate variables identified by SVA).  Consequently the adjustment covariate effects will still show up in the clustering results (and will probably be enhanced) and in the DMR plots (since they do not get removed from the \Rcode{cleanp} matrix).  Only the surrogate variables identified by SVA will be removed from the clustering results and the DMR plots, regardless of whether or not you adjust for covariates.  Setting \Rcode{rob=FALSE} in dmrFinder will cause the covariates' effects to be removed from \Rcode{cleanp} as well (all except the covariate of interest).  \Rcode{rob=TRUE} by default because covariates explicitly adjusted for should typically be real biological rather than technical confounders, and removing the effects of real biological confounders from the percent methylation estimates would change them from being our best estimate of what the true percent methylation is for each probe in our sample to an adjusted version of this.
+
+If you want to obtain FDR q-values for the DMR candidates returned by \Rcode{dmrFind}, you may use the \Rcode{qval} function as follows:
+<<qval>>=
+withq = qval(p=p, dmr=thedmrs, numiter=3, verbose=FALSE, mc=1)
+@
+The \Rcode{numiter} argument is set to 3 here only for convenience of demonstration.  In reality it should be much higher (hundreds, if not thousands).  The \Rcode{p} argument provided must be the same as the one used in \Rcode{dmrFind}.  The \Rcode{qval} function utilizes the \Rpackage{parallel} package that comes with R as of version 2.14.  By default, \Rcode{mc=1} (no parallelization), however on multiple-core machines you can set \Rcode{qval} to use more cores to parallelize the process.  If you are working in a shared computing environment, take care not to request more cores than are available to you.
+
+We may plot DMR candidates from \Rcode{dmrFind} using the \Rcode{plotDMRs} function.  In order to mark the location of CpG islands in the second panel of each plot, we must first obtain a table identifying CpG islands. CpG island definitions according to the method of Wu et al (2010) \cite{Wu2010} are available for a large number of genomes at http://rafalab.jhsph.edu/CGI.  Alternatively, CpG island definitions may be obtained from the UCSC Genome Browser.
+<<plotDMRs>>=
+cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-hg18.txt", 
+                     as.is=TRUE)
+plotDMRs(dmrs=thedmrs, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$tissue, 
+         outfile="./colon-liver.pdf", which_plot=c(1), all.points=FALSE, 
+         plot.these=c("colon","liver"), smoo="loess", ADD=3000, 
+         cols=c("black","red","blue"))
+@
+
+Instead of plotting the probe p-values in the 3rd panel, you may also wish to inspect the behavior of the green channel (total) across the DMR regions.  To do this, you must first have obtained the green channel intensity matrix, which we do here after spatial adjustment and background correction.  In addition to specifying \Rcode{panel3="G"}, we must also provide \Rcode{G} and the sequences corresponding its rows (because the intensities are further corrected for gc-content).
+<<panel3_G>>=
+dat0 = spatialAdjust(rawData, copy=FALSE)
+dat0 = bgAdjust(dat0, copy=FALSE)
+G = pm(dat0)[,,1] #from oligo
+G = G[Index,]
+plotDMRs(dmrs=thedmrs, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$tissue, 
+         outfile="./colon-liver2.pdf", which_plot=c(1), all.points=FALSE, 
+         plot.these=c("colon","liver"), smoo="loess", ADD=3000, 
+         cols=c("black","red","blue"), panel3="G", G=G, seq=seq)
+@
+
+\subsubsection{Continuous covariate of interest}
+The \Rcode{dmrFind} function also handles a continuous covariate of interest.  Here we generate an artificial continuous covariate called \Rcode{x} and perform the analysis using that.
+<<continuous>>=
+pd$x = c(1,2,3,4,5,6)
+mod0 = matrix(1,nrow=nrow(pd),ncol=1)
+mod  = model.matrix(~1 +pd$x)
+coeff = 2
+thedmrs2 = dmrFind(p=p, mod=mod, mod0=mod0, coeff=coeff, pns=pns, chr=chr, pos=pos)
+@
+
+To plot the DMR results, you may either categorize the continuous covariate as for example as follows
+<<plotcat>>=
+groups = as.numeric(cut(mod[,coeff],c(-Inf,2,4,Inf))) #You can change these cutpoints.
+pd$groups = c("low","medium","high")[groups]
+plotDMRs(dmrs=thedmrs2, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$groups, 
+         outfile="./test.pdf", which_plot=c(1), smoo="loess", ADD=3000, 
+         cols=c("black","red","blue"))
+@
+
+or you may plot the correlation of each probe with the covariate as follows:
+<<plotcor>>=
+plotDMRs(dmrs=thedmrs2, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$x, 
+         outfile="./x.pdf", which_plot=c(1), all.points=FALSE, 
+         plot.these=c("colon","liver"), smoo="loess", ADD=3000, 
+         cols=c("black","red","blue"))
+@
+
+An additional function that can be helpful for working with tables with columns "chr", "start", and "end" as many of the objects required or returned by these functions are is the \Rcode{regionMatch} function, which finds for each region in one table the nearest region in another table (using the \Rcode{nearest()} function in the \Rpackage{IRanges} package) and provides information on how near they are to each other.
+<<regionMatch>>=
+ov = regionMatch(thedmrs$dmrs,thedmrs2$dmrs)
+head(ov)
+@
+
+One may also plot regions other than DMR candidates returned by \Rcode{dmrFind}, using the \Rcode{plotRegions} function.
+<<plotRegions>>=
+mytable = thedmrs$dmrs[,c("chr","start","end")]
+mytable[2,] = c("chr1",1,1000) #not on array
+mytable$start = as.numeric(mytable$start)
+mytable$end = as.numeric(mytable$end)
+plotRegions(thetable=mytable[c(1),], cleanp=thedmrs$cleanp, chr=chr, 
+            pos=pos, Genome=Hsapiens, cpg.islands=cpg.cur, outfile="myregions.pdf", 
+            exposure=pd$tissue, exposure.continuous=FALSE)
+@
+
+
+\subsection{Pipeline 2: DMR-finding without adjusting for batch or other covariates}
+
+We can identify differentially methylated regions using the original \Rcode{dmrFinder}:
 <<dmrFinder, results=hide>>=
-dmr <- dmrFinder(rawData, p=p, groups=grp, 
+dmr <- dmrFinder(rawData, p=p0, groups=pd$tissue, 
 	compare=c("colon", "liver","colon", "spleen"),
         removeIf=expression(nprobes<4 | abs(diff)<.05 | abs(maxdiff)<.05))
 @
@@ -183,32 +296,48 @@ When called without the \Rcode{compare} option, \Rcode{dmrFinder} performs all p
 
 We can also plot DMR candidates with the dmrPlot function.  Here we plot just the top DMR candidate from the first DMR table.
 <<dmrPlot>>=
-dmrPlot(dmr=dmr, which.table=1, which.plot=c(1), legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l=c("blue","black","red"), colors.p=c("blue","black"), outpath=".")
+dmrPlot(dmr=dmr, which.table=1, which.plot=c(1), legend.size=1, 
+        all.lines=TRUE, all.points=FALSE, colors.l=c("blue","black","red"), 
+        colors.p=c("blue","black"), outpath=".", cpg.islands=cpg.cur, Genome=Hsapiens)
 @
 
-We can also plot any given genomic regions using this data by using the regionPlot function, supplying the regions in a data frame that must have columns with names "chr", "start", and "end".  Naturally, regions that are not on the array will not appear in the resulting file.
+We can also plot any given genomic regions using this data by using the \Rcode{regionPlot} function, supplying the regions in a data frame that must have columns with names "chr", "start", and "end".  Naturally, regions that are not on the array will not appear in the resulting file.
 
 <<regionPlot>>=
-mytab = data.frame(chr=as.character(dmr$tabs[[1]]$chr[1]), start=as.numeric(c(dmr$tabs[[1]]$start[1])), end=as.numeric(c(dmr$tabs[[1]]$end[1])), stringsAsFactors=FALSE)
-regionPlot(tab=mytab, dmr=dmr, outfile="myregions.pdf", which.plot=1:5, which.groups=c("liver","colon"), cl=c("blue","black"), legend.size=1, buffer=3000)
+mytab = data.frame(chr=as.character(dmr$tabs[[1]]$chr[1]), 
+                   start=as.numeric(c(dmr$tabs[[1]]$start[1])), 
+                   end=as.numeric(c(dmr$tabs[[1]]$end[1])), stringsAsFactors=FALSE)
+regionPlot(tab=mytab, dmr=dmr, cpg.islands=cpg.cur, Genome=Hsapiens, 
+           outfile="myregions.pdf", which.plot=1:5, plot.these=c("liver","colon"), 
+           cl=c("blue","black"), legend.size=1, buffer=3000)
+
 @
 
 The DMR plot is shown in Appendix D, and the plot of the user-provided region is shown in Appendix E.
 
 
-\section{Analysis of paired samples}
-If the samples are paired, we can also analyze them as such.  To show this, let's pretend that the samples in our test data set are paired, and then use the dmrFinder function with the ``paired" argument set to TRUE and the ``pairs" argument specifying which samples are pairs.  (In this example we also have to lower the cutoff since there are not enough samples to find any regions with the default cutoff of 0.995.)
+\subsubsection{Analysis of paired samples}
+If the samples are paired, we can also analyze them as such.  To show this, let's pretend that the samples in our test data set are paired, and then use the \Rcode{dmrFinder} function with the \Rcode{"paired"} argument set to TRUE and the \Rcode{"pairs"} argument specifying which samples are pairs.  (In this example we also have to lower the cutoff since there are not enough samples to find any regions with the default cutoff of 0.995.)
 <<paired>>=
 pData(rawData)$pair = c(1,1,2,2,1,2)
-dmr2 <- dmrFinder(rawData, p=p, groups=grp, 
+dmr2 <- dmrFinder(rawData, p=p0, groups=pd$tissue, 
 	compare=c("colon", "liver","colon", "spleen"),
         removeIf=expression(nprobes<4 | abs(diff)<.05 | abs(maxdiff)<.05),
         paired=TRUE, pairs=pData(rawData)$pair, cutoff=0.95)
 @
 
-We plot the, say, third DMR with the dmrPlot function (shown in Appendix F)
+We plot the, say, third DMR with the \Rcode{dmrPlot} function (shown in Appendix F)
 <<dmrPlot for paired analysis>>=
-dmrPlot(dmr=dmr2, which.table=1, which.plot=c(3), legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l=c("blue","black"), colors.p=c("blue","black"), outpath=".")
+dmrPlot(dmr=dmr2, which.table=1, which.plot=c(3), legend.size=1, all.lines=TRUE, 
+        all.points=FALSE, colors.l=c("blue","black"), colors.p=c("blue","black"), 
+        outpath=".", cpg.islands=cpg.cur, Genome=Hsapiens)
+@
+
+Plotting user-provided regions using the results of paired analysis is done using the \Rcode{regionPlot} function as before (shown in Appendix G).
+<<regionPlot for paired analysis>>=
+regionPlot(tab=mytab, dmr=dmr2, cpg.islands=cpg.cur, Genome=Hsapiens, 
+           outfile="myregions_paired.pdf", which.plot=1:5, 
+           plot.these=c("colon-liver"), cl=c("black"), legend.size=1, buffer=3000)
 @
 
 
@@ -236,6 +365,10 @@ For the arbtirary region we just chose the first DMR.
 \section{Appendix F: DMR plot from analysis of paired samples}
 DMR plot for the third DMR in the list
 \includepdf{colon-liver_paired.pdf}
+
+\section{Appendix G: Plot of an arbitrary genomic region, shown using paired results}
+For the arbtirary region we simply chose the same first DMR as in appendix E.
+\includepdf{myregions_paired.pdf}
  
 \section{Details}
 

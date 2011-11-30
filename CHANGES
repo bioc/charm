@@ -1,3 +1,6 @@
+v2.0
+Added Pipeline 1 to vignette and all pipeline 1 functions (in pipeline1.R).  The previous analysis is now called pipeline 2 in the vignette.  Also updated the dmrPlot and regionPlot functions.
+
 v1.7.1
 Updated dmrFinder help file.  Exported pmQuality.  Added controlQC and cmdsplot functions.  Revised error message in dmrPlot.  Updated the vignette.
 
