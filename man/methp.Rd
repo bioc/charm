@@ -38,7 +38,7 @@ a numeric vector (x,y). The xth percentile of each sample is scaled to represent
 between-sample normalization method. Choices are "quantile", "sqn", and "none". See Details for more fine-grained control.
 }
   \item{controlProbes}{
-character string of the label assigned to non-CpG control probes in the annotation file (i.e. the container column of the .ndf file) (getContainer reports the container values for the pm probes).  This is used only if controlIndex is not provided.  Either this or controlIndex must be provided.
+character string of the label(s) assigned to non-CpG control probes in the array design file, i.e. in the container column of the .ndf design file for your array.  The getContainer function from the oligo package can be used do see the container values for all pm probes.  This argument is used only if controlIndex is not provided.  Either this or controlIndex must be provided.
 }
   \item{controlIndex}{
 a vector of non-CpG control probe indices (can be obtained using getControlIndex).  Either this or controlProbes must be provided.

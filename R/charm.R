@@ -156,13 +156,14 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		withinSampleNorm="loess",
 		scale=c(0.99, 0.99),
 		betweenSampleNorm="quantile", 
-		controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"),
-		controlIndex=NULL, excludeIndex=NULL,
+		controlProbes=NULL, controlIndex=NULL, 
+                excludeIndex=NULL,
 		commonMethPercentParams=NULL,
 		verbose=TRUE, returnM=FALSE, 
 		plotDensity=NULL, plotDensityGroups=NULL) {
 
         if(!is.null(excludeIndex)) if(!inherits(excludeIndex,c("numeric","integer"))) stop("excludeIndex argument, if not NULL, must be a numeric or integer vector.")
+        if(is.null(controlProbes) & is.null(controlIndex)) stop("Either controlProbes or controlIndex argument must be specified.")
         if(!any(controlProbes%in%getContainer(dat)) & is.null(controlIndex)) stop("Invalid controlProbes argument: no such values not found for this array.")
 
 	if(!is.null(plotDensity)) {
@@ -1603,7 +1604,7 @@ get.tt <- function(lm,ls,ns,filter,Indexes,COMPS,ws,verbose){
 }
 
 
-dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=c("CONTROL_PROBES", "CONTROL_REGIONS"), Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, removeIf=expression(nprobes<3),...){
+dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=NULL, Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, removeIf=expression(nprobes<3),...){
 
   if(!is.null(removeIf) & !is.expression(removeIf)) stop("If not NULL, removeIf argument must be an expression.")
   groups = as.character(groups)
@@ -1612,7 +1613,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
 
   args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
 	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,
-            controlProbes=controlProbes, cutoff=cutoff, sortBy=sortBy,
+            cutoff=cutoff, sortBy=sortBy,
             compare=compare, paired=paired, pairs=pairs, removeIf=removeIf)
 
   if(!paired | is.null(DD)){ #then the compare arg will be used.

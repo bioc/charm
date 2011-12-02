@@ -1,3 +1,6 @@
+v.2.0.3
+Removed the default values for the controlProbes argument to methp and dmrFinder.  Added a check to methp to ensure that either controlProbes or controlIndex is provided.  Revised the help file for methp. Also added a default value for the outfile argument to plotDMRs.
+
 v.2.0.2
 Added default colors (labcol argument) to the cmdsplot function.  Also, note that an additional change that was made for version 2.0.1 is that the maxdiff column in the DMR table returned by dmrFinder now retains the sign, whereas before it was only reported in absolute value.
 
