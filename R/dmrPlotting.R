@@ -725,6 +725,9 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
 }
 
 cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, outfile="./cmds_topN.pdf", topN=c(100000,1000)) {
+    stopifnot(expcol%in%colnames(pData(rawData)))
+    if(missing(labcols)) labcols = 1+1:length(unique(pData(rawData)[,expcol]))
+
     stopifnot(length(labcols)>=length(unique(pData(rawData)[,expcol])))
     stopifnot(ncol(p)==nrow(pData(rawData)))
     stopifnot(all(colnames(p)==rownames(pData(rawData))))
