@@ -1,3 +1,6 @@
+v.2.0.1
+The DMR tables returned by dmrFinder now report the average methylation, average difference, and maximum difference in the percent methylation scale rather than the logit scale when paired=TRUE (unless only the l argument is provided, and not eset or p).  Regardless of whether paired=TRUE or paired=FALSE, these columns have also been made exact whereas before there may have been very small non-exactness in some circumstances.
+
 v2.0
 Added Pipeline 1 to vignette and all pipeline 1 functions (in pipeline1.R).  The previous analysis is now called pipeline 2 in the vignette.  Also updated the dmrPlot and regionPlot functions.
 

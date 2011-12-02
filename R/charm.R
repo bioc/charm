@@ -1739,6 +1739,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
           DD0 = get.DD(l=l, groups=groups, compare=compare, pairs=pairs)
           DD    = DD0$DD
           COMPS = DD0$COMPS
+          COMPS.names = DD0$COMPS.names
       }
       ttpaired = get.tt.paired(DD=DD,Indexes=Indexes,filter=filter,ws=ws,verbose=verbose)
       tt  = ttpaired$sT
@@ -1794,41 +1795,68 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
            indexEnd=tapply(Index,segmentation[Index],max))
       length=res[[r]]$indexEnd-res[[r]]$indexStart+1
       res[[r]]$nprobes = length
+## The following commented out part gives identical results to the uncommented out replacement code below if using l rather than p, and if odd number of samples in each group, when using p too, but otherwise lm's values are the means of the middle 2 values and transforming back from logit to p isn't exact so there will be very minor discrepancies.
+#     if(!paired) {
+#         if(is.null(p)) { #  We return log-ratios
+#	      colnames(res[[r]]) <- sub("p1", "m1", colnames(res[[r]]))
+#	      colnames(res[[r]]) <- sub("p2", "m2", colnames(res[[r]]))
+#	      res[[r]]$m1=tapply(lm[Index,j],segmentation[Index],mean)
+#             res[[r]]$m2=tapply(lm[Index,k],segmentation[Index],mean)
+#             diff = res[[r]]$m1 - res[[r]]$m2
+#             maxdiff=tapply(lm[Index,j]-lm[Index,k],segmentation[Index], 
+#                            function(x) { x[which.max(abs(x))] })
+#	  } else { # We return percentages
+#             tmp1 = 1/(1+exp(-lm[Index,j]))
+#             tmp2 = 1/(1+exp(-lm[Index,k]))
+#	      res[[r]]$p1=tapply(tmp1,segmentation[Index],mean)
+#             res[[r]]$p2=tapply(tmp2,segmentation[Index],mean)
+#             diff = res[[r]]$p1 - res[[r]]$p2                
+#	      maxdiff=tapply(tmp1-tmp2,segmentation[Index], 
+#                            function(x) { x[which.max(abs(x))] })
+#         }
+#     } else {
       if(!paired) {
-	  if (is.null(p)) { #  We return log-ratios
+          grp1 = which(groups==colnames(lm)[j])
+          grp2 = which(groups==colnames(lm)[k])
+      } else {
+          grp1 = which(groups==COMPS.names[r,1])
+          grp2 = which(groups==COMPS.names[r,2])
+      }
+          if(is.null(p)) {
 	      colnames(res[[r]]) <- sub("p1", "m1", colnames(res[[r]]))
 	      colnames(res[[r]]) <- sub("p2", "m2", colnames(res[[r]]))
-	      res[[r]]$m1=tapply(lm[Index,j],segmentation[Index],mean)
-              res[[r]]$m2=tapply(lm[Index,k],segmentation[Index],mean)
-              diff   = res[[r]]$m1 - res[[r]]$m2
-	      area   = abs(diff)*length
-              maxdiff=tapply(abs(lm[Index,j]-lm[Index,k]),segmentation[Index],max)
-	  } else { # We return percentages
-              tmp1 = 1/(1+exp(-lm[Index,j]))
-              tmp2 = 1/(1+exp(-lm[Index,k]))
-	      res[[r]]$p1=tapply(tmp1,segmentation[Index],mean)
-              res[[r]]$p2=tapply(tmp2,segmentation[Index],mean)
-              diff   = res[[r]]$p1 - res[[r]]$p2                
-	      area   = abs(diff)*length
-	      maxdiff=tapply(abs(tmp1-tmp2),segmentation[Index],max)
-	  }
-      } else{
-          res[[r]] = res[[r]][,-c(4,5)] #remove columns for p1, p2
-          ##Regardless of whether we used l=logit(p) or user-provided l, we return diff, area, and maxdiff columns based on l (not p), since that is what the calculations used and all we have at this point is MD, and transforming MD for l (mean(logit(p1)-logit(p2))) back into MD for p (mean(p1-p2)) is not do-able, I don't think.  We would have to go back and make and pass on calculations on p along with those on l, which is not worthwhile I don't believe for what diff, area, and maxdiff will be used for.
-          diff    = tapply(MD[Index,r],segmentation[Index],mean)
-          area    = abs(diff)*length
-          maxdiff = tapply(abs(MD[Index,r]),segmentation[Index],max)
-      }
+              mat  = cbind(rowMedians(l[,grp1]), rowMedians(l[,grp2]))
+              matr = t(apply(res[[r]][,c("indexStart","indexEnd")],1,
+                             function(se) colMeans(mat[se[1]:se[2],,drop=FALSE])))
+              res[[r]]$m1 = matr[,1]
+              res[[r]]$m2 = matr[,2]
+              diff = res[[r]]$m1 - res[[r]]$m2
+          } else {
+              mat  = cbind(rowMedians(p[,grp1]), rowMedians(p[,grp2]))
+              matr = t(apply(res[[r]][,c("indexStart","indexEnd")],1,
+                             function(se) colMeans(mat[se[1]:se[2],,drop=FALSE])))
+              res[[r]]$p1 = matr[,1]
+              res[[r]]$p2 = matr[,2]
+              diff = res[[r]]$p1 - res[[r]]$p2 
+          }
+          ## Max diff:
+          matd = mat[,1]-mat[,2]
+          maxdiff = apply(res[[r]][,c("indexStart","indexEnd")],1,
+                          function(se) {
+                              rt = matd[se[1]:se[2]]
+                              rt[which.max(abs(rt))] })
+#      }
      
+      area   = abs(diff)*length
       ttarea = abs(tapply(tt[Index,r],segmentation[Index],mean)) *length
-      res[[r]]$area=area
+      res[[r]]$area = area
       res[[r]]$ttarea = ttarea
       res[[r]]$diff = diff
       res[[r]]$maxdiff = maxdiff
       if(sortBy=="area")   res[[r]]=res[[r]][order(-area),]
       if(sortBy=="ttarea") res[[r]]=res[[r]][order(-ttarea),]
-      if(sortBy=="avg.diff") res[[r]]=res[[r]][order(-diff),]
-      if(sortBy=="max.diff") res[[r]]=res[[r]][order(-maxdiff),]
+      if(sortBy=="avg.diff") res[[r]]=res[[r]][order(-abs(diff)),]
+      if(sortBy=="max.diff") res[[r]]=res[[r]][order(-abs(maxdiff)),]
       if(!is.null(removeIf)) res[[r]]=subset(res[[r]],subset=!eval(removeIf))
       if(verbose) message(nrow(res[[r]])," DMR candidates found using cutoff=",cutoff[r],".")
   }
@@ -2060,6 +2088,7 @@ get.DD <- function(l, groups, compare, pairs){
   NAMES = names(gIndex)
   nums  <- match(compare,NAMES)
   COMPS <- matrix(nums,ncol=2,byrow=TRUE)
+  COMPS.names <- t(apply(COMPS,1,function(x) NAMES[x]))
    
   DD    <- list() #unlike an array a list will accomodate drop-out
   for(i in 1:nrow(COMPS)){
@@ -2090,7 +2119,7 @@ get.DD <- function(l, groups, compare, pairs){
     if(ncol(DD[[i]])==1) colnames(DD[[i]]) = colnames(l)[pd.j] #since no colname given
     names(DD)[i] = paste(NAMES[j],"-",NAMES[k],sep="")
   }
-  return(list(DD=DD,COMPS=COMPS))
+  return(list(DD=DD,COMPS=COMPS,COMPS.names=COMPS.names))
 }
 
 get.tt.paired <- function(DD,Indexes,filter=NULL,ws,verbose=TRUE) {

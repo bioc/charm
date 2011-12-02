@@ -112,8 +112,8 @@ A list with
 		\item{indexStart}{index of first probe in DMR.  This indexes the output of dmrFinder, *not* the input.}
 		\item{indexEnd}{index of last probe in DMR.  This indexes the output of dmrFinder, *not* the input.}
                 \item{nprobes}{number of probes for the DMR, i.e., indexEnd-indexStart+1}
-                \item{diff}{average percentage methylation difference within the DMR if paired=FALSE, and average l (logit(percentage) methylation if l=NULL) difference within the DMR if paired=TRUE}
-                \item{maxdiff}{maximum percentage methylation difference within the DMR if paired=FALSE, and maximum l (logit(percentage) methylation if l=NULL) difference within the DMR if paired=FALSE}
+                \item{diff}{average percentage methylation difference within the DMR (i.e., column p1 - column p2), if p or eset arguments are provided.  Otherwise, if only l argument is provided, it is the average difference in l (i.e, column m1 - column m2).  Prior to version 2.0.1, if paired=TRUE, this was the average l (logit(percentage) methylation if l=NULL) difference within the DMR regardless of whether p or eset were provided.}
+                \item{maxdiff}{maximum percentage methylation difference within the DMR, if p or eset arguments are provided.  Otherwise, if only l argument is provided, it is the maximum difference in l.  Prior to version 2.0.1, if paired=TRUE, this was the maximum l (logit(percentage) methylation if l=NULL) difference within the DMR regardless of whether p or eset were provided.  Also prior to package version 2.0.1, this column was reported only in absolute value, however, post-version 2.0.1 the sign is retained.}
 		\item{area}{nprobes x average difference}	
 		\item{ttarea}{nprobes x (average probe level t-statistic for between group difference)}		
 	}
