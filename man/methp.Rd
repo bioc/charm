@@ -10,8 +10,7 @@ Estimate DNA methylation from McrBC/CHARM microarray data in terms of log-ratios
 \usage{
 methp(dat, spatial = TRUE, bgSubtract = TRUE, withinSampleNorm = "loess", 
 	scale = c(0.99, 0.99), betweenSampleNorm = "quantile", 
-	controlProbes = c("CONTROL_PROBES", "CONTROL_REGIONS"), 
-	controlIndex = NULL, excludeIndex = NULL,
+	controlProbes = NULL, controlIndex = NULL, excludeIndex = NULL,
 	commonMethPercentParams = NULL, 
 	verbose = TRUE, returnM = FALSE, 
 	plotDensity = NULL, plotDensityGroups = NULL)

@@ -1,10 +1,13 @@
-v.2.0.3
+v2.0.4
+Fixed documentation for dmrFinder and methp.
+
+v2.0.3
 Removed the default values for the controlProbes argument to methp and dmrFinder.  Added a check to methp to ensure that either controlProbes or controlIndex is provided.  Revised the help file for methp. Also added a default value for the outfile argument to plotDMRs.
 
-v.2.0.2
+v2.0.2
 Added default colors (labcol argument) to the cmdsplot function.  Also, note that an additional change that was made for version 2.0.1 is that the maxdiff column in the DMR table returned by dmrFinder now retains the sign, whereas before it was only reported in absolute value.
 
-v.2.0.1
+v2.0.1
 The DMR tables returned by dmrFinder now report the average methylation, average difference, and maximum difference in the percent methylation scale rather than the logit scale when paired=TRUE (unless only the l argument is provided, and not eset or p).  Regardless of whether paired=TRUE or paired=FALSE, these columns have also been made exact whereas before there may have been very small non-exactness in some circumstances.
 
 v2.0
@@ -25,10 +28,10 @@ Moved some of the content of the plotting functions in R/dmrPlotting.R into func
 v1.5.3 
 Removed the pattern argument of ff() when creating ff objects so that temporary files get saved only temporarily when creating ff objects.
 
-v.1.5.2
+v1.5.2
 Added to the documentation of the indexStart and indexEnd columns of the tabs matrix object output of dmrFinder.
 
-v.1.5.1 
+v1.5.1 
 Bumped the version number
 
 v1.3.8
