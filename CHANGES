@@ -1,3 +1,6 @@
+v2.0.6
+Added pipeline1.R file, which wasn't actually added at v2.0 when it should have been.
+
 v2.0.5
 Added additional information to help files.  Added a return value to controlQC.  Added text to vignette.
 
