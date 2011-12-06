@@ -722,6 +722,8 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
     plot(medd~c(1:ncol(p2[,ord])),main="median difference",xlab="",ylab="",las=3)
     abline(h=0,lty=3)
     dev.off()
+
+    data.frame(non_control=medm, control=medc, diff=medd)
 }
 
 cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, outfile="./cmds_topN.pdf", topN=c(100000,1000)) {

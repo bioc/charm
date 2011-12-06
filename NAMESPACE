@@ -41,7 +41,7 @@ importFrom(sva, sva, num.sv)
 export(bgAdjust, countGC, cpgdensity, dmrFdr, dmrFinder, dmrPlot, 
 	regionPlot, getControlIndex, maxDensity, pmQuality,
 	methPercent, methp, normalizeBetweenSamples, normalizeWithinSamples,
-	plotDensity, qcReport, readCharm, spatialAdjust, validatePd, controlQC, cmdsplot, 
+	plotDensity, qcReport, readCharm, spatialAdjust, validatePd, controlQC, cmdsplot,
 	dmrFind, qval, plotDMRs, plotRegions, clusterMaker, regionMatch)
 
 # oligo exports (should we import oligo instead?)	 

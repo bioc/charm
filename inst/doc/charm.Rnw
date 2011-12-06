@@ -144,9 +144,10 @@ ctrlIdx <- getControlIndex(rawData, subject=Hsapiens, noCpGWindow=600)
 
 We can check the success of the control probes by comparing their intensity distribution with the non-control probes (before any normalization in which the control probes are used).  
 <<controlQC>>=
-controlQC(rawData=rawData, controlIndex=ctrlIdx, IDcol="sampleID", 
+cqc = controlQC(rawData=rawData, controlIndex=ctrlIdx, IDcol="sampleID", 
           expcol="tissue", ylimits=c(-6,8),
           outfile="boxplots_check.pdf", height=7, width=9)
+cqc
 @
 
 We can also access the probe annotation using standard functions from the oligo package.
@@ -204,7 +205,9 @@ thedmrs = dmrFind(p=p, mod=mod, mod0=mod0, coeff=2, pns=pns, chr=chr, pos=pos)
 @
 
 To compare liver and spleen, set \Rcode{coeff} to 3.  To compare colon and spleen, you must redefine \Rcode{mod} such that the first level is either colon or spleen, and then set \Rcode{coeff} appropriately, e.g., 
-\Rcode{mod  = model.matrix(~1 + factor(pd\$tissue, levels=c("colon","spleen","liver")))} and \Rcode{coeff=2}.  Also note that if you adjust for covariates, their effects will be controlled for when finding DMRs, however their effects are not removed from the matrix of "cleaned" percent methylation estimates (i.e., \Rcode{cleanp}) returned by \Rcode{dmrFind}, which by default removes only batch effects (i.e., the surrogate variables identified by SVA).  Consequently the adjustment covariate effects will still show up in the clustering results (and will probably be enhanced) and in the DMR plots (since they do not get removed from the \Rcode{cleanp} matrix).  Only the surrogate variables identified by SVA will be removed from the clustering results and the DMR plots, regardless of whether or not you adjust for covariates.  Setting \Rcode{rob=FALSE} in dmrFinder will cause the covariates' effects to be removed from \Rcode{cleanp} as well (all except the covariate of interest).  \Rcode{rob=TRUE} by default because covariates explicitly adjusted for should typically be real biological rather than technical confounders, and removing the effects of real biological confounders from the percent methylation estimates would change them from being our best estimate of what the true percent methylation is for each probe in our sample to an adjusted version of this.
+\Rcode{mod  = model.matrix(~1 + factor(pd\$tissue, levels=c("colon","spleen","liver")))} and \Rcode{coeff=2}.  To avoid repeating the SVA analysis within \Rcode{dmrFind}, you may provide the surrogate variables already identified above as an argument to subsequent \Rcode{dmrFind} calls through the \Rcode{svs} argument.  The surrogate variables are located in \Rcode{thedmrs\$args\$svs}, so adding \Rcode{svs=thedmrs\$args\$svs} to the call to \Rcode{dmrFind} would prevent SVA from being called again.  As long as \Rcode{p} (or \Rcode{logitp}, if you provided \Rcode{logitp} to \Rcode{dmrFind}), \Rcode{mod}, and \Rcode{mod0} are the same, the surrogate variables will be the same regardless of which comparison you explore.
+
+Also note that if you adjust for covariates, their effects will be controlled for when finding DMRs, however their effects are not removed from the matrix of "cleaned" percent methylation estimates (i.e., \Rcode{cleanp}) returned by \Rcode{dmrFind}, which by default removes only batch effects (i.e., the surrogate variables identified by SVA).  Consequently the adjustment covariate effects will still show up in the clustering results (and will probably be enhanced) and in the DMR plots (since they do not get removed from the \Rcode{cleanp} matrix).  Only the surrogate variables identified by SVA will be removed from the clustering results and the DMR plots, regardless of whether or not you adjust for covariates.  Setting \Rcode{rob=FALSE} in dmrFinder will cause the covariates' effects to be removed from \Rcode{cleanp} as well (all except the covariate of interest).  \Rcode{rob=TRUE} by default because covariates explicitly adjusted for should typically be real biological rather than technical confounders, and removing the effects of real biological confounders from the percent methylation estimates would change them from being our best estimate of what the true percent methylation is for each probe in our sample to an adjusted version of this.
 
 If you want to obtain FDR q-values for the DMR candidates returned by \Rcode{dmrFind}, you may use the \Rcode{qval} function as follows:
 <<qval>>=
