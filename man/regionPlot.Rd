@@ -7,7 +7,7 @@ Plot user-supplied genomic regions using data returned by the dmrFinder function
 Plot any given genomic regions from tiling microarray data using data returned by the dmrFinder function.
 }
 \usage{
-regionPlot(tab, dmr, cpg.islands, Genome, outfile, which.plot=1:10, plot.these, cl, legend.size=1, buffer=3000, mcrbc=TRUE, plot.p=TRUE, plotG=FALSE, dat=NULL, grs=NULL)
+regionPlot(tab, dmr, cpg.islands, Genome, outfile="./regions.pdf", which.plot=1:10, plot.these, cl, legend.size=1, buffer=3000, plot.p=TRUE, plotG=FALSE, dat=NULL, grs=NULL)
 }
 \arguments{
   \item{tab}{
@@ -40,9 +40,6 @@ cex argument for the legend (factor by which to magnify/shrink the legend).
   \item{buffer}{
 An integer to control how many basepairs to show on either side of the plotted regions.
 }
-  \item{mcrbc}{
-TRUE to mark the location of mcrbc sites with ticks on the upper axis of the second panel.
-}
   \item{plot.p}{
 set to FALSE if you want to plot the methlation values (the "l" output from dmrFinder) instead of the percentage methylation values (the "p" output).  If dmrFinder was run on l instead of p, plot.p=FALSE necessarily.
 }
@@ -58,7 +55,7 @@ if plotG=TRUE, this must be provided.  It is the names of the two groups whose d
 
 }
 \details{
-This function enables plotting of any regions, not just DMRs, using the results of dmrFinder.
+This function enables plotting of any regions, not just DMRs, using the results of dmrFinder.  The second panel shows the location of CpG's with ticks on the bottom (islands are colored) and the location of mcrbc recognition sites with ticks on the top.
 }
 
 

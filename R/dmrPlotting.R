@@ -1,21 +1,21 @@
 ##This file contains both dmrPlot and dmrPlot_paired functions.
 
-dmrPlot <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, mcrbc=TRUE, plotG=FALSE, dat=NULL, buffer=NULL, plot.p=TRUE) {
+dmrPlot <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, plotG=FALSE, dat=NULL, buffer=NULL, plot.p=TRUE) {
   
     if(is.null(dmr$DD)) {
         if(missing(colors.p)) colors.p=1+1:length(unique(dmr$groups))
         if(missing(colors.l)) colors.l=1+1:length(unique(dmr$groups))       
-        dmrPlot_unpaired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath, cpg.islands=cpg.islands, Genome=Genome, mcrbc=mcrbc, plotG=plotG, dat=dat, buffer=buffer, plot.p=plot.p)
+        dmrPlot_unpaired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath, cpg.islands=cpg.islands, Genome=Genome, plotG=plotG, dat=dat, buffer=buffer, plot.p=plot.p)
     } else {
         if(missing(colors.p)) colors.p = 1+1:ncol(dmr$sMD)
         if(missing(colors.l)) colors.l = 1+1:ncol(dmr$sMD)
-        dmrPlot_paired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath, cpg.islands=cpg.islands, Genome=Genome, mcrbc=mcrbc, plotG=plotG, dat=dat, buffer=buffer, plot.p=plot.p)
+        dmrPlot_paired(dmr=dmr, which.table=which.table, which.plot=which.plot, legend.size=legend.size, all.lines=all.lines, all.points=all.points, colors.l=colors.l, colors.p=colors.p, outpath=outpath, cpg.islands=cpg.islands, Genome=Genome, plotG=plotG, dat=dat, buffer=buffer, plot.p=plot.p)
     }
     
 }
 
 #This function is just results_function.R except there is no option to return the table(s) and it does not plot the gene panel.
-dmrPlot_unpaired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, mcrbc=TRUE, plotG=FALSE, dat=NULL, buffer=NULL, plot.p=plot.p) {
+dmrPlot_unpaired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, plotG=FALSE, dat=NULL, buffer=NULL, plot.p=plot.p) {
 
 #require(RColorBrewer)
 #require(Biobase) #for rowMedians
@@ -93,31 +93,31 @@ for(object.i in which.table[has]){
 
     g1 = grs[1]
     g2 = grs[2]
-    if(all.points){
+    if(all.points) {
         showpts = 1:ncol(M)
         th = as.numeric(factor(rank(FACS)))
         tcols = colors.p[th]
     }
-    if(!all.points){
+    if(!all.points) {
         showpts = which(FACS%in%c(g1,g2))
         if(length(colors.p)==length(unique(FACS))){
             th = as.numeric(factor(rank(FACS)))
             tcols = colors.p[th][showpts]
-        } else{ #length(colors.p)==2
+        } else { #length(colors.p)==2
             th = as.numeric(factor(rank(FACS[showpts])))
             tcols = colors.p[th]
         }
     }
-    if(all.lines){
+    if(all.lines) {
         comps.l = match(sort(colnames(sMM)),colnames(sMM))
         cl = colors.l
     }
-    if(!all.lines){
+    if(!all.lines) {
         comps.l = match(c(g1,g2),colnames(sMM))
         if(length(colors.l)==length(unique(FACS))){
             ao = match(c(g1,g2),sort(unique(FACS)))
             cl = colors.l[ao]
-        } else{ #length(colors.l)==2
+        } else { #length(colors.l)==2
             cl = colors.l[order(c(g1,g2))]
         }
     }
@@ -159,7 +159,7 @@ for(object.i in which.table[has]){
       } else {
           layout(matrix(1:2,ncol=1),heights=c(0.6,0.2))
       }
-      par(mar=c(0,3.5,0.25,1.1),oma=c(0,0,2,0),mgp=c(2.5,.5,0))
+      par(mar=c(0,3.6,0.25,1.1),oma=c(0,0,2,0),mgp=c(2.5,.5,0))
 
       matplot(pos[Index],M[Index,showpts],col=tcols,cex=0.6,ylim=YLIM,xlab="",
               xaxt="n",ylab=ylabel,xlim=c(start,end),lty=1,las=1)
@@ -176,21 +176,21 @@ for(object.i in which.table[has]){
       
       ##PLOT CPG ISLANDS
       if(plotG) {
-          plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=mcrbc)
+          plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=TRUE)
       } else {
-          par(mar=c(3.5,3.5,0.25,1.1))
-          plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=mcrbc, xlab="Location", xaxt=NULL)
+          par(mar=c(3.6,3.6,0.25,1.1))
+          plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=TRUE, xlab="Location", xaxt=NULL)
       }
 
       if(plotG) { ##Plot difference in G
-          par(mar=c(3.5,3.5,0.25,1.1))
+          par(mar=c(3.6,3.6,0.25,1.1))
           plot(pos[Index], mes[Index], ylab="Difference in median G", xlab="Location",
                ylim=c(-2.5,2.5), type="b")
           abline(h=0,lty=3)
       }
 
       mtext(paste("ID:",i,"--",as.character(thechr),":",start,"-",end,sep=""),
-            side=3,cex=1.5,outer=TRUE)
+            side=3, cex=1.5, outer=TRUE)
     }
     cat("\n")
     dev.off()
@@ -199,7 +199,7 @@ cat("\nPlotting finished.\n")
 }
 
 
-dmrPlot_paired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, mcrbc, plotG, dat, buffer, plot.p) {
+dmrPlot_paired <- function(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, plotG, dat, buffer, plot.p) {
 #NB: all.points and all.lines refer to all comparisons that were made, not that could be made!
   
 #require(RColorBrewer)
@@ -255,7 +255,7 @@ if(is.null(dmr$p) | !plot.p) {
 #################Make output table and pdf file of plots##############
 has = which(!sapply(tabs[which.table],is.null))
 for(object.i in which.table[has]) {
-    message("Plotting table ",object.i)
+    message("Plotting regions in table ",object.i)
     #################Make output table:###############################
     obj = tabs[[object.i]]
     if(!any(colnames(obj)=="index")) obj$index=match(obj$regionName,names(Indexes))
@@ -286,7 +286,7 @@ for(object.i in which.table[has]) {
         stopifnot(length(mes)==length(pos)) #pos is dmr$pos, defined above
     }
 
-    for(i in intersect(which.plot,1:nrow(obj))){
+    for(i in intersect(which.plot,1:nrow(obj))) {
       message("Plotting region ",i)
       if(is.null(dmr$p) | !plot.p){
           YLIM=c(-6,6)
@@ -317,11 +317,11 @@ for(object.i in which.table[has]) {
           layout(matrix(1:2,ncol=1),heights=c(0.6,0.2))
       }
       #par(mar=c(0,2.5,0.25,1.1),oma=c(0,0,2,0))
-      par(mar=c(0,3.5,0.25,1.1),oma=c(1.1,0,2,0),mgp=c(2.5,.5,0))
+      par(mar=c(0,3.6,0.25,1.1),oma=c(1.1,0,2,0),mgp=c(2.5,.5,0))
 
       matplot(pos[Index],DD[[object.i]][Index,],type="n",ylim=YLIM,xlab="",
               xaxt="n",ylab=ylabel,xlim=c(start,end), lty=1, las=1)
-      if(all.points){ plotpoints = has } else{ plotpoints = object.i }
+      if(all.points) { plotpoints = has } else { plotpoints = object.i }
       for(ppi in plotpoints){
           matpoints(pos[Index],DD[[ppi]][Index,],col=colors.p[ppi],cex=0.6)
       }
@@ -342,14 +342,14 @@ for(object.i in which.table[has]) {
       
       ##PLOT CPG ISLANDS
       if(plotG) {
-          plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=mcrbc)
+          plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=TRUE)
       } else {
-          par(mar=c(3.5,3.5,0.25,1.1))
-          plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=mcrbc, xlab="Location", xaxt=NULL)
+          par(mar=c(3.6,3.6,0.25,1.1))
+          plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=TRUE, xlab="Location", xaxt=NULL)
       }
 
       if(plotG) { ##Plot difference in G
-          par(mar=c(3.5,3.5,0.25,1.1))
+          par(mar=c(3.6,3.6,0.25,1.1))
           plot(pos[Index], mes[Index], ylab="Difference in median G", xlab="Location",
                ylim=c(-2.5,2.5), type="b")
           abline(h=0,lty=3)
@@ -366,21 +366,21 @@ cat("\nPlotting finished.\n")
 
 
 
-regionPlot <- function(tab, dmr, cpg.islands, Genome, outfile, which.plot=1:10, plot.these, cl, legend.size=1, buffer=3000, mcrbc=TRUE, plot.p=TRUE, plotG=FALSE, dat=NULL, grs=NULL) {
+regionPlot <- function(tab, dmr, cpg.islands, Genome, outfile="./regions.pdf", which.plot=1:10, plot.these, cl, legend.size=1, buffer=3000, plot.p=TRUE, plotG=FALSE, dat=NULL, grs=NULL) {
   
     if(is.null(dmr$DD)) {
         if(missing(plot.these)) plot.these = colnames(dmr$gm)
         if(missing(cl))         cl = 1+1:ncol(dmr$gm)       
-        regionPlot_unpaired(tab=tab, dmr=dmr, cpg.islands=cpg.islands, Genome=Genome, outfile=outfile, which.plot = which.plot, plot.these=plot.these, cl=cl, legend.size=legend.size, buffer=buffer, mcrbc=mcrbc, plot.p=plot.p, plotG=plotG, dat=dat, grs=grs)
+        regionPlot_unpaired(tab=tab, dmr=dmr, cpg.islands=cpg.islands, Genome=Genome, outfile=outfile, which.plot = which.plot, plot.these=plot.these, cl=cl, legend.size=legend.size, buffer=buffer, plot.p=plot.p, plotG=plotG, dat=dat, grs=grs)
     } else {
         if(missing(plot.these)) plot.these = colnames(dmr$sMD)
         if(missing(cl))         cl = 1+1:length(plot.these)
-        regionPlot_paired(tab=tab, dmr=dmr, cpg.islands=cpg.islands, Genome=Genome, outfile=outfile, which.plot = which.plot, plot.these=plot.these, cl=cl, legend.size=legend.size, buffer=buffer, mcrbc=mcrbc, plot.p=plot.p, plotG=plotG, dat=dat, grs=grs)
+        regionPlot_paired(tab=tab, dmr=dmr, cpg.islands=cpg.islands, Genome=Genome, outfile=outfile, which.plot = which.plot, plot.these=plot.these, cl=cl, legend.size=legend.size, buffer=buffer, plot.p=plot.p, plotG=plotG, dat=dat, grs=grs)
     }
     
 }
   
-regionPlot_unpaired <- function(tab, dmr, cpg.islands, Genome, outfile, which.plot=1:10, plot.these=colnames(dmr$gm), cl=1+1:ncol(dmr$gm), legend.size=1, buffer=3000, mcrbc=TRUE, plot.p=TRUE, plotG=FALSE, dat=NULL, grs=NULL) {
+regionPlot_unpaired <- function(tab, dmr, cpg.islands, Genome, outfile="./regions.pdf", which.plot=1:10, plot.these=colnames(dmr$gm), cl=1+1:ncol(dmr$gm), legend.size=1, buffer=3000, plot.p=TRUE, plotG=FALSE, dat=NULL, grs=NULL) {
 
 #require(RColorBrewer)
 
@@ -469,7 +469,7 @@ for(i in intersect(which.plot,1:nrow(tab))) {
       layout(matrix(1:2,ncol=1),heights=c(0.6,0.2))
   }
   #par(mar=c(0,2.5,0.25,1.1),oma=c(0,0,2,0))
-  par(mar=c(0,3.5,0.25,1.1),oma=c(1.1,0,2,0),mgp=c(2.5,.5,0))
+  par(mar=c(0,3.6,0.25,1.1),oma=c(1.1,0,2,0),mgp=c(2.5,.5,0))
 
   matplot(dmr$pos[Index], M[Index,wh], col=cl[th], lty=1, ylab=ylabel, ylim=YLIM, cex=0.6, xlab="position", xlim=c(start,end), xaxt="n", las=1)
   matlines(dmr$pos[Index],sMM[Index,comps.l],lwd=2,lty=1,col=cl)
@@ -481,14 +481,14 @@ for(i in intersect(which.plot,1:nrow(tab))) {
 
   ##PLOT CPG ISLANDS
   if(plotG) {
-      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=mcrbc)
+      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=TRUE)
   } else {
-      par(mar=c(3.5,3.5,0.25,1.1))
-      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=mcrbc, xlab="Location", xaxt=NULL)
+      par(mar=c(3.6,3.6,0.25,1.1))
+      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=TRUE, xlab="Location", xaxt=NULL)
   }
       
   if(plotG) { ##Plot difference in G
-      par(mar=c(3.5,3.5,0.25,1.1))
+      par(mar=c(3.6,3.6,0.25,1.1))
       plot(dmr$pos[Index], mes[Index], ylab="Difference in median G", xlab="Location",
            ylim=c(-2.5,2.5), type="b")
       abline(h=0,lty=3)
@@ -502,7 +502,7 @@ for(i in intersect(which.plot,1:nrow(tab))) {
 }
 
 
-regionPlot_paired <- function(tab, dmr, cpg.islands, Genome=Genome, outfile, which.plot = 1:10, plot.these=colnames(dmr$sMD), cl=1+1:length(plot.these), legend.size=1, buffer=3000, plot.p=TRUE, mcrbc=TRUE, plotG=FALSE, dat=NULL, grs=NULL) {
+regionPlot_paired <- function(tab, dmr, cpg.islands, Genome=Genome, outfile, which.plot = 1:10, plot.these=colnames(dmr$sMD), cl=1+1:length(plot.these), legend.size=1, buffer=3000, plot.p=TRUE, plotG=FALSE, dat=NULL, grs=NULL) {
 
 #require(RColorBrewer)
 
@@ -591,7 +591,7 @@ for(i in intersect(which.plot,1:nrow(tab))) {
   } else {
       layout(matrix(1:2,ncol=1),heights=c(0.6,0.2))
   }
-  par(mar=c(0,3.5,0.25,1.1),oma=c(0,0,2,0),mgp=c(2.5,.5,0))
+  par(mar=c(0,3.6,0.25,1.1),oma=c(0,0,2,0),mgp=c(2.5,.5,0))
 
   matplot(dmr$pos[Index],DD[[1]][Index,],type="n",ylim=YLIM,xlab="",
           xaxt="n",ylab=ylabel,xlim=c(start,end),lty=1, las=1)
@@ -608,14 +608,14 @@ for(i in intersect(which.plot,1:nrow(tab))) {
 
   ##PLOT CPG ISLANDS
   if(plotG) {
-      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=mcrbc)
+      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=TRUE)
   } else {
-      par(mar=c(3.5,3.5,0.25,1.1))
-      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=mcrbc, xlab="Location", xaxt=NULL)
+      par(mar=c(3.6,3.6,0.25,1.1))
+      plot_CpG(thechr=thechr, xx=start:end, ocpgi=ocpgi, Genome=Genome, mcrbc=TRUE, xlab="Location", xaxt=NULL)
   }
 
   if(plotG) { ##Plot difference in G
-      par(mar=c(3.5,3.5,0.25,1.1))
+      par(mar=c(3.6,3.6,0.25,1.1))
       plot(dmr$pos[Index], mes[Index], ylab="Difference in median G", xlab="Location",
            ylim=c(-2.5,2.5), type="b")
       abline(h=0,lty=3)
@@ -625,7 +625,6 @@ for(i in intersect(which.plot,1:nrow(tab))) {
         side=3, cex=1.5, outer=TRUE)
   }
 dev.off()
-unlink(c("tmp.txt","tmp.cod"))
 cat("\n Plotting finished.\n")
 }
 
@@ -636,7 +635,7 @@ cat("\n Plotting finished.\n")
 ## plot_CpGs is in pipeline1.R
 
 mypar <-function(a=1,b=1,brewer.n=8,brewer.name="Dark2",...){
-  require(RColorBrewer)
+  #require(RColorBrewer)
   par(mar=c(2.5,2.5,1.6,1.1),mgp=c(1.5,.5,0)) 
   par(mfrow=c(a,b),...)
   palette(brewer.pal(brewer.n,brewer.name)) 
@@ -727,6 +726,7 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
 }
 
 cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, outfile="./cmds_topN.pdf", topN=c(100000,1000)) {
+    #require(genefilter) #for rowSds()
     stopifnot(expcol%in%colnames(pData(rawData)))
     if(missing(labcols)) labcols = 1+1:length(unique(pData(rawData)[,expcol]))
 
@@ -734,14 +734,11 @@ cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, o
     stopifnot(ncol(p)==nrow(pData(rawData)))
     stopifnot(all(colnames(p)==rownames(pData(rawData))))
 
-    require(genefilter) #for rowSds()
     thechr = pmChr(rawData)
-    thepos = pmPosition(rawData)
     stopifnot(length(thechr)==length(pmindex(rawData)))
     stopifnot(length(thechr)==nrow(p))
 
     thechr = thechr[okqc]
-    thepos = thepos[okqc]
     p = p[okqc,]
     if(noXorY) p3=p[!thechr%in%c("chrX","chrY"),] else p3=p
     

@@ -11,8 +11,8 @@ dmrFinder(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL,
 	sdBins=NULL, controlIndex=NULL, controlProbes=NULL, Indexes=NULL, 
 	filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  
 	withinSampleNorm="loess", betweenSampleNorm="quantile", 
-	cutoff=0.995, sortBy="ttarea",paired=FALSE,pairs=NULL,DD=NULL,COMPS=NULL,
-        removeIf=expression(nprobes<3),...)
+	cutoff=0.995, sortBy="ttarea", removeIf=expression(nprobes<3), 
+        paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, COMPS.names=NULL)
 }
 \arguments{
   \item{eset}{
@@ -74,6 +74,9 @@ t-statistic cutoff used to identify probes as being in a DMR
   \item{sortBy}{
 sort column for the DMR table. "area", "ttarea", "avg.diff", or "max.diff".
 }
+  \item{removeIf}{
+expression indicating which DMRs to drop from the DMR tables that get returned.  The negation of this is used as the subset argument to the subset function when it is called on the final DMR table before it is returned.  If NULL, no DMRs will be subsetted out from the final table before it is returned.  DMR table column names to use are listed below.  E.g., to drop all DMRs with less than 4 probes, set removeIf=expression(nprobes<4).
+}
   \item{paired}{
 if TRUE, do comparisons within pairs of samples.  FALSE by default.
 }
@@ -81,16 +84,13 @@ if TRUE, do comparisons within pairs of samples.  FALSE by default.
 if paired=TRUE, this must be provided.  a vector of pair identifiers for the samples in eset.  values must be the same within pairs and different between pairs.
 }
   \item{DD}{
-DD object returned by dmrFinder when paired=TRUE.  This argument may be ignored. 
+Ignore this argument. 
 }
   \item{COMPS}{
-comps object returned by dmrFinder.  This argument may be ignored.
+Ignore this argument.
 }
-  \item{removeIf}{
-expression indicating which DMRs to drop from the DMR tables that get returned.  The negation of this is used as the subset argument to the subset function when it is called on the final DMR table before it is returned.  If NULL, no DMRs will be subsetted out from the final table before it is returned.  DMR table column names to use are listed below.  E.g., to drop all DMRs with less than 4 probes, set removeIf=expression(nprobes<4).
-}
-  \item{\dots}{
-further options to be passed to methp
+  \item{COMPS.names}{
+Ignore this argument.
 }
 }
 \details{

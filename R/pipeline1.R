@@ -36,7 +36,7 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     P = ncol(X)
     if(rob) no = 1:ncol(mod) else no = c(1, which(!colnames(mod)%in%colnames(mod0)))
     if(use.limma) {
-        require(limma)
+        #require(limma)
         if(verbose) cat("\nRegression (limma)\n")
         fit=limma::lmFit(logitp, X)
 
@@ -145,7 +145,7 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
 }
 
 rowCor <- function(m, y) { #faster version of apply(m,1,function(x) cor(x,y))
-    require(genefilter)
+    #require(genefilter)
     stopifnot(is.matrix(m)|is.data.frame(m))
     stopifnot(is.vector(y))
     stopifnot(ncol(m)==length(y))
@@ -188,7 +188,7 @@ dosmooth <- function(stat, pnsIndexes, pos, smoo="runmed", k=3, SPAN=300, DELTA=
 
 loessPns <- function(stat, se=NULL, pnsIndexes, pos, numProbes = 8, verbose=TRUE) {
         ##pnsIndexes = split(seq(along = pns), pns) #takes a second, so do outside function for speed
-	require(limma)
+	#require(limma)
 	sstat = stat
 
         if(verbose) pb=txtProgressBar(min=0,max=length(pnsIndexes),initial=0)        
@@ -225,7 +225,7 @@ loessPns <- function(stat, se=NULL, pnsIndexes, pos, numProbes = 8, verbose=TRUE
 ######################################################################
 
 qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE) {
-    require(parallel)
+    #require(parallel)
     if(is.null(p) & is.null(logitp)) stop("Either p or logitp must be provided (the same as you provided to dmrFind when it produced dmr).")
     if(!is.null(p)) {
         if(nrow(dmr$cleanp)!=nrow(p) | ncol(dmr$cleanp)!=ncol(p)) stop("p must be the same as the p that you provided to dmrFind when it produced dmr.")        
@@ -286,10 +286,12 @@ pperm <- function(lp, dmr, numiter, verbose) {
 }
 
 counts <- function(x1,x2) {
-    ec = ecdf(x1+(1e-9)) #add small amount to make ecdf < rather than <=.
-    out = 1-ec(x2)
-    stopifnot(all(out>=0 & out<=1))
-    round(out*length(x1)) # round since some numbers have very small imprecision
+    if(length(x1)==0) rep(0,length(x2)) else {
+        ec = ecdf(x1+(1e-9)) #add small amount to make ecdf < rather than <=.
+        out = 1-ec(x2)
+        stopifnot(all(out>=0 & out<=1))
+        round(out*length(x1)) # round since some numbers have very small imprecision
+    }
 
     ##This is the slower way to do this function:
     #ret = vector()
@@ -297,8 +299,10 @@ counts <- function(x1,x2) {
     #ret
 }
 monotonic <- function(x,increasing=TRUE) {
-    if(increasing)  for(i in 2:length(x))  x[i] = max(x[i],x[i-1])
-    if(!increasing) for(i in 2:length(x))  x[i] = min(x[i],x[i-1]) 
+    if(length(x)>1) {
+        if(increasing)  for(i in 2:length(x))  x[i] = max(x[i],x[i-1])
+        if(!increasing) for(i in 2:length(x))  x[i] = min(x[i],x[i-1])
+    }
     x
 }
 
@@ -337,7 +341,7 @@ plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.p
     dmrs$dmrs$chr = as.character(dmrs$dmrs$chr)   
 
     if(panel3=="G") {
-        require(Biobase) #for rowMedians
+        #require(Biobase) #for rowMedians
         G = log2(preprocessCore::normalize.quantiles(G))
         # remove probe effects from G:
         G = G - rowMedians(G)
@@ -490,7 +494,7 @@ plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.island
     }  
 
     if(panel3=="G") {
-        require(Biobase) #for rowMedians
+        #require(Biobase) #for rowMedians
         G = log2(preprocessCore::normalize.quantiles(G))
         # remove probe effects from G:
         G = G - rowMedians(G)
@@ -591,7 +595,7 @@ plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.island
 
 ###Remove sequence effect:
 remove_gc_effect <- function(M, seq) {
-    require(Biostrings)
+    #require(Biostrings)
     stopifnot(nrow(M)==length(seq))
     #dset = DNAStringSet(seq)
     freq = alphabetFrequency(seq)
@@ -707,7 +711,7 @@ regionFinder<-function(x,regionNames,chr,position,y=x,
 }
 
 regionMatch <- function(object1, object2, verbose=TRUE) {
-    require(IRanges)
+    #require(IRanges)
     m1 = object1; m2 = object2 #keep arguments named object1,object2 for backward compatibility
     stopifnot(all(c("chr","start","end")%in%colnames(m1)))
     stopifnot(all(c("chr","start","end")%in%colnames(m2)))

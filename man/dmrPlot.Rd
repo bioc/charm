@@ -7,7 +7,7 @@ Plot differentially methylated regions (DMRs) found using the dmrFinder function
 Plot differentially methylated regions (DMRs) from tiling microarray data that were identified using the dmrFinder function.  To plot DMRs identified using the dmrFind function, use the plotDMRs function.
 }
 \usage{
-dmrPlot(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, mcrbc=TRUE, plotG=FALSE, dat=NULL, buffer=NULL, plot.p=TRUE)
+dmrPlot(dmr, which.table=1:length(dmr$tabs), which.plot=1:30, legend.size=1, all.lines=TRUE, all.points=FALSE, colors.l, colors.p, outpath=".", cpg.islands, Genome, plotG=FALSE, dat=NULL, buffer=NULL, plot.p=TRUE)
 }
 \arguments{
   \item{dmr}{
@@ -43,9 +43,6 @@ a table with columns "chr","start", and "end" for CpG islands to plot in the sec
   \item{Genome}{
 the BSgenome object for the organism based upon which your array was designed.
 }
-  \item{mcrbc}{
-TRUE to mark the location of mcrbc sites with ticks on the upper axis of the second panel.
-}
   \item{plotG}{
 if TRUE, a third panel of each DMR plot will show the difference between the median green channel value (after subtracting probe medians and correcting for gc content) between the 2 groups. If true, dat must be provided.
 }
@@ -61,7 +58,7 @@ set to FALSE if you want to plot the methlation values (the "l" output from dmrF
 
 }
 \details{
-This function plots the differentially methylated regions (DMRs).
+This function plots the differentially methylated regions (DMRs).  The second panel shows the location of CpG's with ticks on the bottom (islands are colored) and the location of mcrbc recognition sites with ticks on the top.
 }
 
 

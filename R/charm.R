@@ -1604,32 +1604,31 @@ get.tt <- function(lm,ls,ns,filter,Indexes,COMPS,ws,verbose){
 }
 
 
-dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=NULL, Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, removeIf=expression(nprobes<3),...){
+dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns=NULL, sdBins=NULL, controlIndex=NULL, controlProbes=NULL, Indexes=NULL, filter=NULL, package=NULL, ws=7, verbose=TRUE, compare="all",  withinSampleNorm="loess", betweenSampleNorm="quantile", cutoff=0.995, sortBy="ttarea", removeIf=expression(nprobes<3), paired=FALSE, pairs=NULL, DD=NULL, COMPS=NULL, COMPS.names=NULL) {
 
   if(!is.null(removeIf) & !is.expression(removeIf)) stop("If not NULL, removeIf argument must be an expression.")
   groups = as.character(groups)
   if(paired & is.null(DD) & is.null(pairs)) stop("pairs argument must be provided if paired=TRUE.")
   if(paired & is.null(DD) & length(pairs)!=length(groups)) stop("pairs argument must be same length as groups.")
 
-  args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
-	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,
-            cutoff=cutoff, sortBy=sortBy,
-            compare=compare, paired=paired, pairs=pairs, removeIf=removeIf)
-
-  if(!paired | is.null(DD)){ #then the compare arg will be used.
+  if(!paired | is.null(DD)) { #then the compare arg will be used.
       if(identical(compare,"all")) compare=comp(groups)
       if(length(compare)%%2!=0) stop("compare must have an even number of elements.")
       if(length(cutoff)==1) cutoff <- rep(cutoff, length(compare)/2)
       if(length(compare)/2!=length(cutoff)) stop(length(compare)/2," comparisons requested but ", length(cutoff)," cutoff(s) provided.")
       if(!all(compare%in%groups)) stop("Not all groups specified in the compare argument are in the groups argument.")
   }
-  if(paired) require(genefilter) #for rowVars in get.tt.paired
+
+  args=list(filter=filter, ws=ws, betweenSampleNorm=betweenSampleNorm, 
+	    withinSampleNorm=withinSampleNorm, sdBins=sdBins,
+            cutoff=cutoff, sortBy=sortBy, compare=compare, 
+            paired=paired, pairs=pairs, removeIf=removeIf)
 
   # dmrFinder must be given either eset or p/l,chr,pos,pns, and package.
   # If eset is supplied then all the latter will be taken from it (with any
   # that were given as arguments being ignored) (except p).
   # l=logit(p). Indexes=split(seq(along=pns),pns).
-  if(is.null(eset)){
+  if(is.null(eset)) {
       if (is.null("p") & is.null("l")) stop("p or l must be supplied.")
       Args = c("chr","pos","pns","package")  #"controlIndex" not needed
       nulls = sapply(Args,function(x) is.null(get(x)))
@@ -1728,19 +1727,21 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
   	  Indexes=split(seq(along=pns),pns)
   }
 
-  if(!paired){
+  if(!paired) {
       tog = get.tog(l=l,groups=groups,compare=compare,verbose=verbose)
       lm=tog$lm
       ls=tog$ls
       ns=tog$ns
       COMPS=tog$COMPS
       tt = get.tt(lm=lm,ls=ls,ns=ns,COMPS=COMPS,Indexes=Indexes,filter=filter,ws=ws,verbose=verbose)
-  } else{
-      if(is.null(DD)){
+  } else {
+      if(is.null(DD)) {
           DD0 = get.DD(l=l, groups=groups, compare=compare, pairs=pairs)
           DD    = DD0$DD
           COMPS = DD0$COMPS
           COMPS.names = DD0$COMPS.names
+      } else { 
+          if(is.null(COMPS)|is.null(COMPS.names)) stop("If DD is provided, COMPS and COMPS.names must also be provided.")
       }
       ttpaired = get.tt.paired(DD=DD,Indexes=Indexes,filter=filter,ws=ws,verbose=verbose)
       tt  = ttpaired$sT
@@ -1751,7 +1752,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
   res=vector("list",ncol(tt))
   names(res)=colnames(tt)
   if(verbose) message("Finding DMRs for each pairwise comparison.")
-  for(r in 1:nrow(COMPS)){
+  for(r in 1:nrow(COMPS)) {
       j = COMPS[r,1]
       k = COMPS[r,2]
       if(verbose) message("\n",colnames(tt)[r])
@@ -1816,15 +1817,17 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
 #                            function(x) { x[which.max(abs(x))] })
 #         }
 #     } else {
-      if(!paired) {
-          grp1 = which(groups==colnames(lm)[j])
-          grp2 = which(groups==colnames(lm)[k])
-      } else {
-          grp1 = which(groups==COMPS.names[r,1])
-          grp2 = which(groups==COMPS.names[r,2])
-      }
+
+      if(nrow(res[[r]])>0) {
+          if(!paired) {
+              grp1 = which(groups==colnames(lm)[j])
+              grp2 = which(groups==colnames(lm)[k])
+          } else {
+              grp1 = which(groups==COMPS.names[r,1])
+              grp2 = which(groups==COMPS.names[r,2])
+          }
           if(is.null(p)) {
-	      colnames(res[[r]]) <- sub("p1", "m1", colnames(res[[r]]))
+              colnames(res[[r]]) <- sub("p1", "m1", colnames(res[[r]]))
 	      colnames(res[[r]]) <- sub("p2", "m2", colnames(res[[r]]))
               mat  = cbind(rowMedians(l[,grp1]), rowMedians(l[,grp2]))
               matr = t(apply(res[[r]][,c("indexStart","indexEnd")],1,
@@ -1838,7 +1841,7 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
                              function(se) colMeans(mat[se[1]:se[2],,drop=FALSE])))
               res[[r]]$p1 = matr[,1]
               res[[r]]$p2 = matr[,2]
-              diff = res[[r]]$p1 - res[[r]]$p2 
+              diff = res[[r]]$p1 - res[[r]]$p2
           }
           ## Max diff:
           matd = mat[,1]-mat[,2]
@@ -1846,30 +1849,40 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
                           function(se) {
                               rt = matd[se[1]:se[2]]
                               rt[which.max(abs(rt))] })
-#      }
      
-      area   = abs(diff)*length
-      ttarea = abs(tapply(tt[Index,r],segmentation[Index],mean)) *length
-      res[[r]]$area = area
-      res[[r]]$ttarea = ttarea
-      res[[r]]$diff = diff
-      res[[r]]$maxdiff = maxdiff
-      if(sortBy=="area")   res[[r]]=res[[r]][order(-area),]
-      if(sortBy=="ttarea") res[[r]]=res[[r]][order(-ttarea),]
-      if(sortBy=="avg.diff") res[[r]]=res[[r]][order(-abs(diff)),]
-      if(sortBy=="max.diff") res[[r]]=res[[r]][order(-abs(maxdiff)),]
-      if(!is.null(removeIf)) res[[r]]=subset(res[[r]],subset=!eval(removeIf))
+          area   = abs(diff)*length
+          ttarea = abs(tapply(tt[Index,r],segmentation[Index],mean)) *length
+          res[[r]]$area    = area
+          res[[r]]$ttarea  = ttarea
+          res[[r]]$diff    = diff
+          res[[r]]$maxdiff = maxdiff
+          if(sortBy=="area")     res[[r]]=res[[r]][order(-area),]
+          if(sortBy=="ttarea")   res[[r]]=res[[r]][order(-ttarea),]
+          if(sortBy=="avg.diff") res[[r]]=res[[r]][order(-abs(diff)),]
+          if(sortBy=="max.diff") res[[r]]=res[[r]][order(-abs(maxdiff)),]
+          if(!is.null(removeIf)) res[[r]]=subset(res[[r]],subset=!eval(removeIf))
+      } else {
+           res[[r]]=data.frame(chr=character(0), start=numeric(0), end=numeric(0),
+                               p1=numeric(0), p2=numeric(0), regionName=character(0),
+                               indexStart=numeric(0), indexEnd=numeric(0), 
+                               nprobes=numeric(0), area=numeric(0), ttarea=numeric(0), 
+                               diff=numeric(0), maxdiff=numeric(0))
+           if(is.null(p)) {
+              colnames(res[[r]]) <- sub("p1", "m1", colnames(res[[r]]))
+	      colnames(res[[r]]) <- sub("p2", "m2", colnames(res[[r]]))
+           }
+      }
       if(verbose) message(nrow(res[[r]])," DMR candidates found using cutoff=",cutoff[r],".")
   }
   if(verbose) message("\nDone")
-  if(!paired){
+  if(!paired) {
       return(list(tabs=res, p=p, l=l, chr=chr, pos=pos, pns=pns, 
               index=index, gm=lm, #controlIndex=controlIndex,
               groups=groups, args=args, comps=COMPS, package=package))
   } else {
       return(list(tabs=res, p=p, l=l, chr=chr, pos=pos, pns=pns, 
               index=index, DD=DD, sMD=sMD, #controlIndex=controlIndex,
-              groups=groups, args=args, comps=COMPS, package=package))
+              groups=groups, args=args, comps=COMPS, comps.names=COMPS.names, package=package))
   }
 }
 
@@ -2124,7 +2137,7 @@ get.DD <- function(l, groups, compare, pairs){
 }
 
 get.tt.paired <- function(DD,Indexes,filter=NULL,ws,verbose=TRUE) {
-  require(genefilter)
+  #require(genefilter)
   ok = which(sapply(DD,length)>1)
   MD   <- matrix(NA,nrow=nrow(DD[[1]]),ncol=length(DD)) #mean differences
   vars <- matrix(NA,nrow=nrow(DD[[1]]),ncol=length(DD)) #their variances
