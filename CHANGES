@@ -1,3 +1,6 @@
+v1.7.8  
+Version number changed to 1.7.8 to follow the Bioconductor version numbering protocol. No code changes. 
+
 v2.0.8    
 Cleaned cmdsplot function code.  Moved assignment of args in dmrFinder one chunk lower.  Added default outfile to regionPlot.  Made mcrbc=TRUE hardcoded and removed arguments for it in plotting functions.  Added COMPS.names argument to dmrFinder. Enabled dmrFinder to handle situation where no DMRs are found. Enabled counts() function to handle situation where length(x1)==0. Enabled monotonic() function to handle situation where length(x)<2.
 
