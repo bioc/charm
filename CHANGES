@@ -1,3 +1,6 @@
+v1.7.9
+Fixed a typo in methp.Rd.
+
 v1.7.8  
 Version number changed to 1.7.8 to follow the Bioconductor version numbering protocol. No code changes. 
 

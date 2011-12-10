@@ -27,7 +27,7 @@ boolean indicating whether to correct spatial artefacts
 boolean indicating whether to estimate and remove background signal before computing log-ratios
 }
   \item{withinSampleNorm}{
-within-sample normalization method. Choices are "loess" and "none". "loess" uses the control-probe loess procedure described in Aryee et al., 2001 (PMID: 20858772).
+within-sample normalization method. Choices are "loess" and "none". "loess" uses the control-probe loess procedure described in Aryee et al., 2011 (PMID: 20858772).
 }
   \item{scale}{
 a numeric vector (x,y). The xth percentile of each sample is scaled to represent y\% methylation. The default c(0.99, 0.99) means probes in the 99\% percentile represent 99\% methylation. 
