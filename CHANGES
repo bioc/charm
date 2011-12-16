@@ -1,3 +1,6 @@
+v1.7.11
+Added a chunk to readCharm to prevent an error when sampleKey values are present for one channel but are missing for the other.  The function now fills in the missing values in the one channel with the values from the other.
+
 v1.7.10    
 Added cmdsplot.Rd, controlQC.Rd, and pmQuality.Rd files, which were supposed to have been added previously but were not.
 

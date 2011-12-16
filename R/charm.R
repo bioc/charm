@@ -299,8 +299,18 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
         sampleNames <- sub(ut, "", filesUt)
     }
 
-	if (!missing(sampleKey)){
+	if (!missing(sampleKey)) {
 		sampleKey <- sampleKey[o,]
+
+                utNA <- is.na(sampleKey[utIdx,]) & !is.na(sampleKey[mdIdx,])
+                mdNA <- !is.na(sampleKey[utIdx,]) & is.na(sampleKey[mdIdx,])
+                for(j in 1:ncol(sampleKey)) {
+                    rp1 = utNA[,j]
+                    rp2 = mdNA[,j]
+                    if(any(rp1)) sampleKey[utIdx[rp1],j] = sampleKey[mdIdx[rp1],j]
+                    if(any(rp2)) sampleKey[mdIdx[rp2],j] = sampleKey[utIdx[rp2],j]
+                }
+
 		same <- sampleKey[utIdx,]==sampleKey[mdIdx,]
 		bothNA <- is.na(sampleKey[utIdx,]) & is.na(sampleKey[mdIdx,])
 		keep <- apply(same | bothNA, 2, all)
