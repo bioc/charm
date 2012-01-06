@@ -1,3 +1,6 @@
+v2.1.1
+Version number bumped. No code changes.
+
 v1.7.11
 Added a chunk to readCharm to prevent an error when sampleKey values are present for one channel but are missing for the other.  The function now fills in the missing values in the one channel with the values from the other.
 
