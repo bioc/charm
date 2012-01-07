@@ -227,11 +227,11 @@ loessPns <- function(stat, se=NULL, pnsIndexes, pos, numProbes = 8, verbose=TRUE
 qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE) {
     #require(parallel)
     if(is.null(p) & is.null(logitp)) stop("Either p or logitp must be provided (the same as you provided to dmrFind when it produced dmr).")
-    if(!is.null(p)) {
+    if(!is.null(p) & "cleanp"%in%names(dmr)) {
         if(nrow(dmr$cleanp)!=nrow(p) | ncol(dmr$cleanp)!=ncol(p)) stop("p must be the same as the p that you provided to dmrFind when it produced dmr.")        
     }
     if(!is.null(logitp)) {
-        if(nrow(dmr$cleanp)!=nrow(logitp) | ncol(dmr$cleanp)!=ncol(logitp)) stop("logitp must be the same as the logitp that you provided to dmrFind when it produced dmr.")
+        if("cleanp"%in%names(dmr)) if(nrow(dmr$cleanp)!=nrow(logitp) | ncol(dmr$cleanp)!=ncol(logitp)) stop("logitp must be the same as the logitp that you provided to dmrFind when it produced dmr.")
     } else logitp = log(p)-log(1-p)
     #stopifnot(all(dmr$dmrs[,dmr$args$sortBy]>=0))
 
@@ -253,15 +253,23 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
         X  = cbind(dmr$args$mod, svs)
         X0 = cbind(dmr$args$mod0, svs)
     }
-    fit1 = limma::lmFit(logitp,X)
-    r_ij = residuals(fit1, logitp)
-    fit0 = limma::lmFit(logitp,X0)
-    n_ij = fitted(fit0)
+    #fit1 = limma::lmFit(logitp,X)
+    #r_ij = residuals(fit1, logitp)
+    #fit0 = limma::lmFit(logitp,X0)
+    #n_ij = fitted(fit0)
+    ## To use less memory and go faster, do this instead of lmFit:
+    r_ij = lm_fit(dat=logitp,X=X,out="res")
+    n_ij = lm_fit(dat=logitp,X=X0,out="fit")
 
     colsamp = matrix(NA, nrow=numiter, ncol=ncol(r_ij))
     set.seed(seed)
-    for(j in 1:nrow(colsamp)) colsamp[j,] = sample(1:ncol(r_ij),replace=TRUE)    
-    fun1 <- function(h) pperm(lp= n_ij + r_ij[,colsamp[h,]], dmr=dmr, numiter=1, verbose=verbose)
+    for(j in 1:nrow(colsamp)) colsamp[j,] = sample(1:ncol(r_ij),replace=TRUE)
+    fun1 <- function(h) {
+        dmr2 = dmrFind(logitp= n_ij + r_ij[,colsamp[h,]], svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose)
+        if(nrow(dmr2$dmrs)==0) add=0 else add = abs(dmr2$dmrs[,dmr$args$sortBy])
+        #rm(dmr2); gc(); gc()
+        counts(add, abs(dmr$dmrs[,dmr$args$sortBy]))
+    }
     message("\nBeginning the iterations")
     nullnum0 = mclapply(1:nrow(colsamp), fun1, mc.cores=mc)
     message("\nFinished the iterations")
@@ -273,18 +281,15 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
     if(return.permutations) return(list(q=orig_tab, permutations=colsamp)) else return(orig_tab)
 }
 
-pperm <- function(lp, dmr, numiter, verbose) {
-    nullnum  = matrix(NA, nrow=nrow(dmr$dmrs), ncol=numiter)
-    for(iter in 1:numiter) { 
-        dmr2 = dmrFind(logitp=lp, svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose)
-        if(nrow(dmr2$dmrs)==0) add=0 else add = abs(dmr2$dmrs[,dmr$args$sortBy])
-        #stopifnot(all(add>=0))
-        nullnum[,iter] = counts(add, abs(dmr$dmrs[,dmr$args$sortBy]))
-        #rm(dmr2,lp); gc(); gc()
-    }
-    nullnum
+lm_fit <- function(dat, X, out) {
+    ## Use this instead of lmFit because this uses less memory and is faster.  Estimated betas are the same anyway--lmFit is only useful for (shrunk) se's, which we don't need for this.
+    Hat=solve(t(X)%*%X)%*%t(X)
+    if(out=="fit") {
+        return(t(X%*% (Hat%*%t(dat)) ))
+    } else if(out=="res") {
+        return(dat - t(X%*% (Hat%*%t(dat)) ))
+    } else stop("invalid out arg")
 }
-
 counts <- function(x1,x2) {
     if(length(x1)==0) rep(0,length(x2)) else {
         ec = ecdf(x1+(1e-9)) #add small amount to make ecdf < rather than <=.
