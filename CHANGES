@@ -1,3 +1,6 @@
+v2.1.3
+Added tab$chr=as.character(tab$chr) to regionPlot_unpaired and regionPlot_paired to prevent error at Genome[[thechr]] when tab$chr is factor.
+
 v2.1.2    
 Replaced usage of limma:::lmFit in qval with lm_fit (newly defined in this package).  Also updated the lines of checking at the start of qval.  Also removed pperm function and made fun1 in qval what pperm used to be.
 
