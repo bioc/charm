@@ -224,7 +224,8 @@ loessPns <- function(stat, se=NULL, pnsIndexes, pos, numProbes = 8, verbose=TRUE
 ######################################################################
 ######################################################################
 
-qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE) {
+qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE, method="direct") {
+    if(!any(c("direct","pool","fwer")%in%method)) stop("method must = direct, pool, or fwer.")
     #require(parallel)
     if(is.null(p) & is.null(logitp)) stop("Either p or logitp must be provided (the same as you provided to dmrFind when it produced dmr).")
     if(!is.null(p) & "cleanp"%in%names(dmr)) {
@@ -264,20 +265,48 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
     colsamp = matrix(NA, nrow=numiter, ncol=ncol(r_ij))
     set.seed(seed)
     for(j in 1:nrow(colsamp)) colsamp[j,] = sample(1:ncol(r_ij),replace=TRUE)
-    fun1 <- function(h) {
+    fun1 <- function(h, method) {
         dmr2 = dmrFind(logitp= n_ij + r_ij[,colsamp[h,]], svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose)
-        if(nrow(dmr2$dmrs)==0) add=0 else add = abs(dmr2$dmrs[,dmr$args$sortBy])
-        #rm(dmr2); gc(); gc()
-        counts(add, abs(dmr$dmrs[,dmr$args$sortBy]))
+        ret = vector("list",3)
+        ## abs() here makes these tests 2-sided:
+        if("direct"%in%method) {
+            if(nrow(dmr2$dmrs)==0) add=0 else add = abs(dmr2$dmrs[,dmr$args$sortBy])
+            #rm(dmr2); gc(); gc()
+            ret[[1]] = counts(add, abs(orig_tab[,dmr$args$sortBy]))
+        }
+        if("pool"%in%method) {
+            if(nrow(dmr2$dmrs)>0) ret[[2]] = abs(dmr2$dmrs[,dmr$args$sortBy])
+        }
+        if("fwer"%in%method) {
+            if(nrow(dmr2$dmrs)==0) ret[[3]] = 0 else ret[[3]] = max(abs(dmr2$dmrs[,dmr$args$sortBy]))
+        }
+        ret
     }
     message("\nBeginning the iterations")
-    nullnum0 = mclapply(1:nrow(colsamp), fun1, mc.cores=mc)
+    nullnum0 = mclapply(1:nrow(colsamp), fun1, method=method, mc.cores=mc)
     message("\nFinished the iterations")
-    nullnum = do.call(cbind,nullnum0)
+    dig=7
+    if("direct"%in%method) {
+        nullnum = sapply(nullnum0, function(x) x[[1]])
+        ##Obtain FDR estimates:
+        stopifnot(nrow(nullnum)==nrow(orig_tab))
+        qv = rowMeans(nullnum)/seq(1,nrow(orig_tab))
+        orig_tab$qvalue = round(monotonic(pmin(1,qv)), dig)
+    }
+    if("pool"%in%method) {
+        nulldist = unlist(sapply(nullnum0, function(x) x[[2]]))
+        Fn = ecdf(nulldist + (1e-9))
+        pv = 1-Fn(abs(orig_tab[,dmr$args$sortBy]))
+        orig_tab$pvalue.pool = round(pv,dig)
+        orig_tab$qvalue.pool = round(edge.qvalue(pv)$qvalues,dig)
+    }
+    if("fwer"%in%method) {
+        maxs = sapply(nullnum0, function(x) x[[3]])
+        Fnn = ecdf(maxs + (1e-9))
+        pvv = 1-Fnn(abs(orig_tab[,dmr$args$sortBy]))
+        orig_tab$pvalue.fwer = round(pvv, 7) #max(1,nchar(numiter)-1)
+    }
     
-    ##Obtain FDR estimates:
-    qv = rowMeans(nullnum)/seq(1,nrow(orig_tab))
-    orig_tab$qvalue = round(monotonic(pmin(1,qv)), 4) #max(1,nchar(numiter)-1)
     if(return.permutations) return(list(q=orig_tab, permutations=colsamp)) else return(orig_tab)
 }
 
@@ -309,6 +338,105 @@ monotonic <- function(x,increasing=TRUE) {
         if(!increasing) for(i in 2:length(x))  x[i] = min(x[i],x[i-1])
     }
     x
+}
+
+# qvalue calculator that doesn't use tcltk
+edge.qvalue <- function(p,lambda = seq(0, 0.9, 0.05), pi0.method = "smoother",
+                         fdr.level = NULL, robust = FALSE,smooth.df = 3, smooth.log.pi0 = FALSE, ...) {
+
+  err.func <- "edge.qvalue"
+  if (min(p) < 0 || max(p) > 1) {
+    err.msg(err.func,"P-values not in valid range.")
+    return(invisible(1))
+  }
+  if (length(lambda) > 1 && length(lambda) < 4) {
+    err.msg(err.func,"If length of lambda greater than 1, you need at least 4 values.")
+    return(invisible(1))
+  }
+  if (length(lambda) > 1 && (min(lambda) < 0 || max(lambda) >= 1)) {
+    err.msg(err.func,"Lambda must be in [0,1).")
+    return(invisible(1))
+  }
+  m <- length(p)
+  if (length(lambda) == 1) {
+    if (lambda < 0 || lambda >= 1) {
+      err.msg(err.func,"Lambda must be in [0,1).")
+      return(invisible(1))
+    }
+    pi0 <- mean(p >= lambda)/(1 - lambda)
+    pi0 <- min(pi0, 1)
+  } else {
+    pi0 <- rep(0, length(lambda))
+    for (i in 1:length(lambda)) {
+      pi0[i] <- mean(p >= lambda[i])/(1 - lambda[i])
+    }
+    if (pi0.method == "smoother") {
+      if (smooth.log.pi0){ 
+        pi0 <- log(pi0)
+        spi0 <- smooth.spline(lambda, pi0, df = smooth.df)
+        pi0 <- predict(spi0, x = max(lambda))$y
+      }
+      if (smooth.log.pi0) {
+        pi0 <- exp(pi0)
+      }
+      pi0 <- min(pi0, 1)
+    }
+    else if (pi0.method == "bootstrap") {
+      minpi0 <- min(pi0)
+      mse <- rep(0, length(lambda))
+      pi0.boot <- rep(0, length(lambda))
+      for (i in 1:100) {
+        p.boot <- sample(p, size = m, replace = TRUE)
+        for (i in 1:length(lambda)) {
+          pi0.boot[i] <- mean(p.boot > lambda[i])/(1 - lambda[i])
+        }
+        mse <- mse + (pi0.boot - minpi0)^2
+      }
+      pi0 <- min(pi0[mse == min(mse)])
+      pi0 <- min(pi0, 1)
+    }
+    else {
+      err.msg(err.func,"'pi0.method' must be one of 'smoother' or 'bootstrap'")
+      return(invisible(1))
+    }
+  }
+  if (pi0 <= 0) {
+    err.msg(err.func,"The estimated pi0 <= 0. Check that you have valid\np-values or use another lambda method.")
+    return(invisible(1))
+  }
+  if (!is.null(fdr.level) && (fdr.level <= 0 || fdr.level > 1)) {
+    err.msg(err.func,"'fdr.level' must be within (0,1].")
+    return(invisible(1))
+  }
+  u <- order(p)
+  qvalue.rank <- function(x) {
+    idx <- sort.list(x)
+    fc <- factor(x)
+    nl <- length(levels(fc))
+    bin <- as.integer(fc)
+    tbl <- tabulate(bin)
+    cs <- cumsum(tbl)
+    tbl <- rep(cs, tbl)
+    tbl[idx] <- tbl
+    return(tbl)
+  }
+  v <- qvalue.rank(p)
+  qvalue <- pi0 * m * p/v
+  if (robust) {
+    qvalue <- pi0 * m * p/(v * (1 - (1 - p)^m))
+  }
+  qvalue[u[m]] <- min(qvalue[u[m]], 1)
+  for (i in (m - 1):1) {
+    qvalue[u[i]] <- min(qvalue[u[i]], qvalue[u[i + 1]], 1)
+  }
+  if (!is.null(fdr.level)) {
+    retval <- list(call = match.call(), pi0 = pi0, qvalues = qvalue, pvalues = p, fdr.level = fdr.level, significant = (qvalue <= fdr.level), lambda = lambda)
+  }
+  else {
+    retval <- list(call = match.call(), pi0 = pi0, qvalues = qvalue, pvalues = p, lambda = lambda)
+  }
+  class(retval) <- "qvalue"
+  return(retval)
 }
 
 ######################################################################
