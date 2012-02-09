@@ -1,3 +1,6 @@
+v2.1.5
+Changed methp so that excludeIndex probes are also removed from plots created if plotDensity argument is specified.  Also updated the controlIndex and excludeIndex arguments to methp in the methp help file.
+
 v2.1.4
 Added method option to qval.  Also made sva package dependency be >=3.0.2.
 

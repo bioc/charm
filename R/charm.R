@@ -163,6 +163,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		plotDensity=NULL, plotDensityGroups=NULL) {
 
         if(!is.null(excludeIndex)) if(!inherits(excludeIndex,c("numeric","integer"))) stop("excludeIndex argument, if not NULL, must be a numeric or integer vector.")
+        if(!is.null(controlIndex)) if(!inherits(controlIndex,c("numeric","integer"))) stop("controlIndex argument, if not NULL, must be a numeric or integer vector.")
         if(is.null(controlProbes) & is.null(controlIndex)) stop("Either controlProbes or controlIndex argument must be specified.")
         if(!any(controlProbes%in%getContainer(dat)) & is.null(controlIndex)) stop("Invalid controlProbes argument: no such values not found for this array.")
 
@@ -171,7 +172,8 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		par(mfrow=c(5,2), mar=c(2,2,4,2))
 		lwd <- rep(1, ncol(dat))
 		plotDensity(dat, main="1. Raw", lab=plotDensityGroups, 
-		 	controlIndex=controlIndex, controlProbes=controlProbes)
+		 	controlIndex=controlIndex, controlProbes=controlProbes,
+                        excludeIndex=excludeIndex)
 	}
 
 	if (is.list(betweenSampleNorm)) {
@@ -207,7 +209,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 	}
 	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
-		plotDensity(dat, main="2. After spatial & bg", lab=plotDensityGroups, controlIndex=controlIndex, controlProbes=controlProbes)
+		plotDensity(dat, main="2. After spatial & bg", lab=plotDensityGroups, controlIndex=controlIndex, controlProbes=controlProbes, excludeIndex=excludeIndex)
 	}	
 	# Within sample normalization
 	if (is.null(controlIndex)) {
@@ -220,7 +222,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="3. After within-sample norm", 
 			lab=plotDensityGroups, controlIndex=controlIndex,
-                        controlProbes=controlProbes)
+                        controlProbes=controlProbes, excludeIndex=excludeIndex)
 	}
 	if (verbose>2) print(gc())		
 
@@ -242,7 +244,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="4. After between-sample norm",
 		 lab=plotDensityGroups, controlIndex=controlIndex,
-                 controlProbes=controlProbes)
+                 controlProbes=controlProbes, excludeIndex=excludeIndex)
 	}		
 
 	if (returnM=="TRUE") {
@@ -259,7 +261,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		if(returnM=="FALSE") {
 			plotDensity(retval, main="5. Percentage methylation", 
 			rx=c(0,1), lab=plotDensityGroups, controlIndex=controlIndex,
-                       controlProbes=controlProbes) 
+                       controlProbes=controlProbes, excludeIndex=excludeIndex) 
                 }
 		dev.off()		
 	}
@@ -366,7 +368,7 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 ## plotDensity ##
 #################
 plotDensity <- function(dat, rx=c(-4,6), controlIndex=NULL, 
-		controlProbes=NULL, pdfFile=NULL, main=NULL, lab=NULL) {
+		controlProbes=NULL, pdfFile=NULL, main=NULL, lab=NULL, excludeIndex=NULL) {
 
         if(is.null(controlIndex) & is.null(controlProbes)) stop("Either controlIndex or controlProbes argument must be provided to plotDensity.")
 	if (!is.null(pdfFile)) {
@@ -383,9 +385,12 @@ plotDensity <- function(dat, rx=c(-4,6), controlIndex=NULL,
 		if (is.null(lab)) lab <- colnames(dat)		
 	}
 	if (is.null(controlIndex)) controlIndex <- getControlIndex(dat, controlProbes= controlProbes)
-	plotDensityMat(M, idx=pmIndex, xlab="M", lab=lab, 
+        pIdx <- pmIndex
+	if(!is.null(excludeIndex)) pIdx <- pIdx[-excludeIndex]
+	cIndex <- pIdx[setdiff(controlIndex, excludeIndex)]
+	plotDensityMat(M, idx=pIdx, xlab="M", lab=lab, 
 		main=paste(main,"\nAll probes"), rx=rx)
-	plotDensityMat(M, idx=pmIndex[controlIndex], xlab="M", lab=lab, 
+	plotDensityMat(M, idx=cIdx, xlab="M", lab=lab, 
 		main=paste(main, "\nControl probes"), rx=rx)
 	if (!is.null(pdfFile)) dev.off()
 }
