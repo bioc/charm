@@ -1,3 +1,6 @@
+v2.1.6
+Added a check to the start of dmrFind to ensure that all the columns of mod for the covariate of interest come after the columns of mod0. 
+
 v2.1.5
 Changed methp so that excludeIndex probes are also removed from plots created if plotDensity argument is specified.  Also updated the controlIndex and excludeIndex arguments to methp in the methp help file.
 

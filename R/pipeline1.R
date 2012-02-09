@@ -4,6 +4,9 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     if(!sortBy%in%c("area","area.raw","avg","max")) stop("sortBy must be area, area.raw, avg, or max.")
     if(min.value<0 | min.value>1) stop("min.value must be between 0 and 1.")
     if(Q<0 | Q>1) stop("Q must be between 0 and 1.")
+
+    for(j in 1:ncol(mod0)) if(!isTRUE(all.equal(mod0[,j],mod[,j]))) stop("This function requires that all columns of mod not in mod0 (i.e., the column(s) for your covariate of interest) come after the columns of mod0, i.e., the first n columns of mod must be the same as mod0, where n is the number of columns in mod0.") # If this function were modified to enable the covariate of interest columns to come at the start or elsewhere, e.g., changing mod[,-c(1:ncol(mod0)),drop=FALSE] below, it would require matching on column names of mod and mod0, but then the function would require column names to be the same, a new requirement and one often not met for the intercept column.
+
     if(is.null(p) & is.null(logitp)) stop("Either p or logitp must be provided.")
     if(!is.null(p)) {
         stopifnot(min(p)>=0 & max(p)<=1)
@@ -32,7 +35,7 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
 
     svs = as.matrix(svs)
     svs = svs[,!duplicated(svs[1,])] #remove duplicate sv's
-    if(isTRUE(svs==0)) X = mod else X = cbind(mod, svs)
+    if(svs==0) X = mod else X = cbind(mod, svs)
     P = ncol(X)
     if(rob) no = 1:ncol(mod) else no = c(1, which(!colnames(mod)%in%colnames(mod0)))
     if(use.limma) {
