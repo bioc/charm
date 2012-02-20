@@ -1,3 +1,6 @@
+v2.1.7
+Added drop=FALSE to dmrFind, plotDMRs, and plotRegions in places where they were missing.
+
 v2.1.6
 Added a check to the start of dmrFind to ensure that all the columns of mod for the covariate of interest come after the columns of mod0. 
 

@@ -98,7 +98,7 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
         if(verbose) message("Covariate recognized as categorical.")
         base = which(rowSums(mod[,-c(1:ncol(mod0)),drop=FALSE])==0)
         grp1 = which(mod[,coiIndex]==1)
-        mat = cbind(rowMeans(cleanp[,grp1]), rowMeans(cleanp[,base]))
+        mat = cbind(rowMeans(cleanp[,grp1,drop=FALSE]), rowMeans(cleanp[,base,drop=FALSE]))
         ## Mean diff:
         res = t(apply(odmrs[,c("indexStart","indexEnd")],1,
                       function(se) colMeans(mat[se[1]:se[2],,drop=FALSE])))
@@ -525,7 +525,7 @@ plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.p
                   main=paste("DMR ",i," - ",dmrs$dmrs$chr[i],":",dmrs$dmrs$start[i],"-", 
                              dmrs$dmrs$end[i],sep=""),las=1, pch=thepch)
           for(j in seq(along=gIndexes)) {
-              yy=rowMeans(dmrs$cleanp[Index,gIndexes[[j]]])
+              yy=rowMeans(dmrs$cleanp[Index,gIndexes[[j]],drop=FALSE])
               if(smoo=="runmed") {
                   yy2 = runmed(yy,3,endrule="constant")
               } else {
@@ -677,7 +677,7 @@ plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.island
                     main=paste("Region ",i," - ",thetable$chr[i],":",thetable$start[i],"-", 
                                thetable$end[i],sep=""),las=1)
             for(j in seq(along=gIndexes)){
-                yy=rowMeans(cleanp[Index,gIndexes[[j]]])
+                yy=rowMeans(cleanp[Index,gIndexes[[j]],drop=FALSE])
                 if(smoo=="runmed") {
                     yy2 = runmed(yy,3,endrule="constant")
                 } else {

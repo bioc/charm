@@ -17,7 +17,7 @@ matrix of methylation percentage estimates. Either this or logitp must be provid
 matrix of logit-transformed methylation percentage estimates.  Either this or p must be provided. 
 }
   \item{svs}{
-surrogate variables whose effect will be corrected for.  This should be svaobj$sv, where svaobj is the object returned by sva().
+surrogate variables whose effect will be corrected for.  This should be svaobj$sv, where svaobj is the object returned by sva().  Setting svs=0 will result in sva not being used.
 }
   \item{mod}{
 The mod argument provided to sva() which yielded svs.  This should be a design matrix with all the adjustment covariates and (in the rightmost column(s)) your covariate of interest.
