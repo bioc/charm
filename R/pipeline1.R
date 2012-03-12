@@ -5,7 +5,7 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     if(min.value<0 | min.value>1) stop("min.value must be between 0 and 1.")
     if(Q<0 | Q>1) stop("Q must be between 0 and 1.")
 
-    for(j in 1:ncol(mod0)) if(!isTRUE(all.equal(mod0[,j],mod[,j]))) stop("This function requires that all columns of mod not in mod0 (i.e., the column(s) for your covariate of interest) come after the columns of mod0, i.e., the first n columns of mod must be the same as mod0, where n is the number of columns in mod0.") # If this function were modified to enable the covariate of interest columns to come at the start or elsewhere, e.g., changing mod[,-c(1:ncol(mod0)),drop=FALSE] below, it would require matching on column names of mod and mod0, but then the function would require column names to be the same, a new requirement and one often not met for the intercept column.
+    for(j in 1:ncol(mod0)) if(!all(mod0[,j]==mod[,j])) stop("This function requires that all columns of mod not in mod0 (i.e., the column(s) for your covariate of interest) come after the columns of mod0, i.e., the first n columns of mod must be the same as mod0, where n is the number of columns in mod0.") # If this function were modified to enable the covariate of interest columns to come at the start or elsewhere, e.g., changing mod[,-c(1:ncol(mod0)),drop=FALSE] below, it would require matching on column names of mod and mod0, but then the function would require column names to be the same, a new requirement and one often not met for the intercept column.
 
     if(is.null(p) & is.null(logitp)) stop("Either p or logitp must be provided.")
     if(!is.null(p)) {
@@ -34,9 +34,11 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     args = list(svs=svs, mod=mod, mod0=mod0, coeff=coeff, use.limma=use.limma, smoo=smoo, SPAN=SPAN, DELTA=DELTA, use=use, Q=Q, min.probes=min.probes, min.value=min.value, keepXY=keepXY, sortBy=sortBy) #save for obtaining q-values.
 
     svs = as.matrix(svs)
-    svs = svs[,!duplicated(svs[1,])] #remove duplicate sv's
-    if(ncol(svs)>=0.5*nrow(svs)) warning("sva() returns an unusually large number of surrogate variables.  You may want to use fewer than the full set returned.")
-    if(svs==0) X = mod else X = cbind(mod, svs)
+    svs = svs[,!duplicated(svs[1,]),drop=FALSE] #remove duplicate sv's
+    if(identical(svs,matrix(0,1,1))) X = mod else {
+        if(ncol(svs)>=0.5*nrow(svs)) warning("sva() returns an unusually large number of surrogate variables.  You may want to use fewer than the full set returned.")
+        X = cbind(mod, svs)
+    }
     P = ncol(X)
     if(rob) no = 1:ncol(mod) else no = c(1, which(!colnames(mod)%in%colnames(mod0)))
     if(use.limma) {
@@ -441,6 +443,14 @@ edge.qvalue <- function(p,lambda = seq(0, 0.9, 0.05), pi0.method = "smoother",
   }
   class(retval) <- "qvalue"
   return(retval)
+}
+
+err.msg <- function(err.func = "edge",msg) {
+ cat('\n')
+ cat('\t')
+ cat('ERROR in the',err.func,'function: ','\n')
+ cat('ERROR in the',err.func,'function: ','\n')
+ cat('\t',msg,'\n\n')
 }
 
 ######################################################################

@@ -1,3 +1,6 @@
+v2.1.10
+Fixed check added at v2.1.6 since all.equal was erroneously returning FALSE when condition is TRUE.
+
 v2.1.9
 Fixed error-causing bug in plotDensity introduced with v2.1.5 (which did not pass R CMD check).
 

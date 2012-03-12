@@ -8,7 +8,7 @@ Make density plots of log-ratios for two-color microarray data. Two plots are pr
 }
 \usage{
 plotDensity(dat, rx = c(-4, 6), controlIndex = NULL, controlProbes=NULL,
-            pdfFile = NULL, main = NULL, lab=NULL)
+            pdfFile = NULL, main = NULL, lab=NULL, excludeIndex = NULL)
 }
 \arguments{
   \item{dat}{
@@ -31,6 +31,9 @@ main title
 }
   \item{lab}{
 vector of sample labels. If not specified the sample names from dat will be used. 
+}
+  \item{excludeIndex}{
+a numeric vector of probe indices indicating which pm probes to ignore when plotting.
 }
 }
 \details{

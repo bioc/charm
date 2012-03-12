@@ -340,7 +340,7 @@ readCharm <- function(files, path=".", ut="_532.xys", md="_635.xys",
 	## oligo 1.10.x (Bioconductor 2.5). This fix avoids    ##
 	## a warning 										   ## 		
 	#version <- as.numeric(sub(".*\\.(.*)\\..*", "\\1",
-	# 	packageDescription("oligo", field="Version")))
+	# 	packageDescription("oligo", fields="Version")))
 	#if (version<11) {	
 	#	vpd <- data.frame(
 	#		labelDescription=c(rep(NA, ncol(pd)-2), 
@@ -2103,7 +2103,7 @@ validatePd <- function(pd, fileNameColumn, sampleNameColumn,
 
 .onAttach <- function(libname, pkgname) {
 	packageStartupMessage("Welcome to charm version ", 
-		packageDescription("charm", field="Version"))
+		packageDescription("charm", fields="Version"))
 	ocSamples(1)
 	ldPath(tempdir())
 }
