@@ -1,5 +1,5 @@
 
-dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, pos, only.cleanp=FALSE, only.dmrs=FALSE, rob=TRUE, use.limma=FALSE, smoo="weighted.loess", k=3, SPAN=300, DELTA=36, use="sbeta", Q=0.99, min.probes=3, min.value=0.075, keepXY=TRUE, sortBy="area.raw", verbose=TRUE) {
+dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, pos, only.cleanp=FALSE, only.dmrs=FALSE, rob=TRUE, use.limma=FALSE, smoo="weighted.loess", k=3, SPAN=300, DELTA=36, use="sbeta", Q=0.99, min.probes=3, min.value=0.075, keepXY=TRUE, sortBy="area.raw", verbose=TRUE, ...) {
     if(only.cleanp & only.dmrs) stop("only.cleanp and only.dmrs cannot both be TRUE.")
     if(!sortBy%in%c("area","area.raw","avg","max")) stop("sortBy must be area, area.raw, avg, or max.")
     if(min.value<0 | min.value>1) stop("min.value must be between 0 and 1.")
@@ -28,13 +28,14 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     if(is.null(svs)) {
         require(sva)
         cat("Running SVA\n")
-        svaobj = sva(logitp,mod=mod,mod0=mod0,method="irw")
+        svaobj = sva(logitp,mod=mod,mod0=mod0,method="irw",...)
         svs = svaobj$sv
     }
     args = list(svs=svs, mod=mod, mod0=mod0, coeff=coeff, use.limma=use.limma, smoo=smoo, SPAN=SPAN, DELTA=DELTA, use=use, Q=Q, min.probes=min.probes, min.value=min.value, keepXY=keepXY, sortBy=sortBy) #save for obtaining q-values.
 
     svs = as.matrix(svs)
     svs = svs[,!duplicated(svs[1,])] #remove duplicate sv's
+    if(ncol(svs)>=0.5*nrow(svs)) warning("sva() returns an unusually large number of surrogate variables.  You may want to use fewer than the full set returned.")
     if(svs==0) X = mod else X = cbind(mod, svs)
     P = ncol(X)
     if(rob) no = 1:ncol(mod) else no = c(1, which(!colnames(mod)%in%colnames(mod0)))

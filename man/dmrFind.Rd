@@ -7,7 +7,7 @@ Identify DMR candidates using a regression-based approach and correcting for bat
 Identify DMR candidates using a regression-based approach and correcting for batch effects.
 }
 \usage{
-dmrFind(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, pos, only.cleanp=FALSE, only.dmrs=FALSE, rob=TRUE, use.limma=FALSE, smoo="weighted.loess", k=3, SPAN=300, DELTA=36, use="sbeta", Q=0.99, min.probes=3, min.value=0.075, keepXY=TRUE, sortBy="area.raw", verbose=TRUE)
+dmrFind(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, pos, only.cleanp=FALSE, only.dmrs=FALSE, rob=TRUE, use.limma=FALSE, smoo="weighted.loess", k=3, SPAN=300, DELTA=36, use="sbeta", Q=0.99, min.probes=3, min.value=0.075, keepXY=TRUE, sortBy="area.raw", verbose=TRUE, ...)
 }
 \arguments{
   \item{p}{
@@ -81,6 +81,9 @@ column of DMR table to sorty by.
 }
   \item{verbose}{
 print progress messages if TRUE.
+}
+  \item{...}{
+Additional arguments passed to sva()
 }
 }
 
