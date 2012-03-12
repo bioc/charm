@@ -1,3 +1,6 @@
+v2.1.9
+Fixed error-causing bug in plotDensity introduced with v2.1.5 (which did not pass R CMD check).
+
 v2.1.8
 Increased the version number of the imported sva package required to 3.1.2 (to avoid the 3.1.0 package with the sva function that sometimes returns too many sv's).  Also added a warning to dmrFind to suggest using fewer surrogate variables if sva returns too many.
 

@@ -390,7 +390,7 @@ plotDensity <- function(dat, rx=c(-4,6), controlIndex=NULL,
 	cIndex <- pIdx[setdiff(controlIndex, excludeIndex)]
 	plotDensityMat(M, idx=pIdx, xlab="M", lab=lab, 
 		main=paste(main,"\nAll probes"), rx=rx)
-	plotDensityMat(M, idx=cIdx, xlab="M", lab=lab, 
+	plotDensityMat(M, idx=cIndex, xlab="M", lab=lab, 
 		main=paste(main, "\nControl probes"), rx=rx)
 	if (!is.null(pdfFile)) dev.off()
 }
