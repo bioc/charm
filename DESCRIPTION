@@ -1,13 +1,13 @@
 Package: charm
 Type: Package
 Title: Analysis of DNA methylation data from CHARM microarrays
-Version: 2.1.10
+Version: 2.1.11
 Date: 2012-03-12
 Author: Martin Aryee, Peter Murakami, Harris Jaffee, Rafael Irizarry
 Maintainer: Martin Aryee <aryee@jhu.edu>
 Depends: R (>= 2.14.0), Biobase, SQN, fields, RColorBrewer, genefilter
 Imports: BSgenome, Biobase, oligo (>= 1.11.31),
-	oligoClasses(>= 1.9.42), ff, preprocessCore, methods, stats,
+	oligoClasses(>= 1.17.39), ff, preprocessCore, methods, stats,
 	Biostrings, IRanges, siggenes, nor1mix, gtools, grDevices,
 	graphics, utils, limma, parallel, sva(>= 3.1.2)
 Suggests: charmData, BSgenome.Hsapiens.UCSC.hg18
