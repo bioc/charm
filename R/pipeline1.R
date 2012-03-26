@@ -31,7 +31,7 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
         svaobj = sva(logitp,mod=mod,mod0=mod0,method="irw",...)
         svs = svaobj$sv
     }
-    args = list(svs=svs, mod=mod, mod0=mod0, coeff=coeff, use.limma=use.limma, smoo=smoo, SPAN=SPAN, DELTA=DELTA, use=use, Q=Q, min.probes=min.probes, min.value=min.value, keepXY=keepXY, sortBy=sortBy) #save for obtaining q-values.
+    args = list(svs=svs, mod=mod, mod0=mod0, coeff=coeff, use.limma=use.limma, smoo=smoo, SPAN=SPAN, DELTA=DELTA, use=use, Q=Q, min.probes=min.probes, min.value=min.value, keepXY=keepXY, sortBy=sortBy, rob=rob, k=k) #save for obtaining q-values.
 
     svs = as.matrix(svs)
     svs = svs[,!duplicated(svs[1,]),drop=FALSE] #remove duplicate sv's
