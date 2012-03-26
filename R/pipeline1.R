@@ -243,7 +243,7 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
     #stopifnot(all(dmr$dmrs[,dmr$args$sortBy]>=0))
 
     ## Test that result is same as original:
-    dmr2 = dmrFind(logitp=logitp, svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose)
+    dmr2 = dmrFind(logitp=logitp, svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose, rob=dmr$args$rob, k=dmr$args$k)
     orig_tab = dmr$dmrs    
     TFvec = vector()
     for(hg in 1:ncol(dmr2$dmrs)) TFvec[hg] = isTRUE(all.equal(dmr2$dmrs[,hg],orig_tab[,hg]))
@@ -272,7 +272,7 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
     set.seed(seed)
     for(j in 1:nrow(colsamp)) colsamp[j,] = sample(1:ncol(r_ij),replace=TRUE)
     fun1 <- function(h, method) {
-        dmr2 = dmrFind(logitp= n_ij + r_ij[,colsamp[h,]], svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose)
+        dmr2 = dmrFind(logitp= n_ij + r_ij[,colsamp[h,]], svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose, rob=dmr$args$rob, k=dmr$args$k)
         ret = vector("list",3)
         ## abs() here makes these tests 2-sided:
         if("direct"%in%method) {
