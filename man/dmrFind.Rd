@@ -44,7 +44,7 @@ if TRUE, only return the matrix of methylation percentage estimates after removi
 if TRUE, do not return the matrix of methylation percentage estimates that have had the batch effects (columns of sv) removed (called cleanp).
 }
    \item{rob}{
-remove only the batch effects from cleanp?  If FALSE, the other adjustment variables in mod and mod0 are also removed. 
+One of the outputs of dmrFind is cleanp, which is the input p matrix after removing batch effects identified by SVA.  By default these are the only effects removed from the p matrix.  However, if you set rob=FALSE, then the other adjustment variables in mod and mod0 (all other variables besides the covariate of interest) are also removed.  This will affect the methylation levels shown in plots using plotDMRs, plotRegions, and any other function that uses the cleanp output of dmrFind.  It does not affect the selection of DMRs, though, except in the application of the filter at the end of the function where DMRs with an average difference between the 2 groups (or the average correlation between methylation and the covariate if the covariate is continuous) of less than the min.value argument are filtered out, since this step uses the cleanp matrix to calculate those averages or that correlation.
 }
   \item{use.limma}{
 Use the linear modeling approach (borrowing strength across probes) of lmFit in the limma package.

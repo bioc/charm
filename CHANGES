@@ -1,3 +1,6 @@
+v2.1.14
+Expanded the explanation of the rob argument to dmrFind in the dmrFind help file.
+
 v2.1.13
 Added rob=dmr$args$rob, k=dmr$args$k to the calls to dmrFind in qval.
 
