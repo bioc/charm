@@ -45,9 +45,9 @@ Martin Aryee <aryee@jhu.edu>
 		# Find non-CpG control probes
 		ctrlIdx <- getControlIndex(rawData, subject=Hsapiens)	
 		# Get normalized methylation log-ratios
-		m <- methp(rawData, controlIndex=ctrlIdx, returnM=TRUE)
+#		m <- methp(rawData, controlIndex=ctrlIdx, returnM=TRUE)
 		# Estimate percentage methylation
-		ngc <- countGC(rawData)
-		p <- methPercent(m, ngc=ngc)
+#		ngc <- countGC(rawData)
+#		p <- methPercent(m, ngc=ngc)
 	}
 }

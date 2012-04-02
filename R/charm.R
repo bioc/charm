@@ -101,7 +101,7 @@ setMethod("nodeFn", c("integer", "ff_matrix"),
 			}
 	        close(object1)
 	        rm(object1, grpCols)
-	        gc()
+##	        gc()
 	    }
 	    TRUE
 	})
@@ -192,7 +192,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 			if(is.null(commonMethPercentParams)) commonMethPercentParams <- FALSE
 		}
 	}
-	if (verbose>2) print(gc())			
+##	if (verbose>2) print(gc())			
 	
 	dat <- cloneFeatureSet(dat)
 	
@@ -201,13 +201,13 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
         if (verbose) message("Spatial normalization")
        	dat <- spatialAdjust(dat, copy=FALSE)
     }
-	if (verbose>2) print(gc())		
+##	if (verbose>2) print(gc())		
     # Background removal
 	if (bgSubtract) {
     	if (verbose) message("Background removal")
 		dat <- bgAdjust(dat, copy=FALSE)
 	}
-	if (verbose>2) print(gc())		
+##	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="2. After spatial & bg", lab=plotDensityGroups, controlIndex=controlIndex, controlProbes=controlProbes, excludeIndex=excludeIndex)
 	}	
@@ -224,7 +224,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 			lab=plotDensityGroups, controlIndex=controlIndex,
                         controlProbes=controlProbes, excludeIndex=excludeIndex)
 	}
-	if (verbose>2) print(gc())		
+##	if (verbose>2) print(gc())		
 
     # Between sample normalization    
 	if (verbose) {
@@ -240,7 +240,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 		m=bs$m, untreated=bs$untreated, enriched=bs$enriched,
 		controlProbes=controlProbes, controlIndex=controlIndex,
 		excludeIndex=excludeIndex, verbose=verbose)
-	if (verbose>2) print(gc())		
+##	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		plotDensity(dat, main="4. After between-sample norm",
 		 lab=plotDensityGroups, controlIndex=controlIndex,
@@ -255,7 +255,7 @@ methp <- function(dat, spatial=TRUE, bgSubtract=TRUE,
 			commonParams=commonMethPercentParams,
 	 		ngc=countGC(dat))
 	}
-	if (verbose>2) print(gc())		
+##	if (verbose>2) print(gc())		
 	if(!is.null(plotDensity)) {
 		if (is.null(controlIndex)) controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
 		if(returnM=="FALSE") {
@@ -1027,7 +1027,7 @@ normalizeWithinSamples <- function (dat, copy=TRUE, method = "loess",
     if (grepl("loess", method)) {
         dat <- normalizeLoess(dat, copy=copy, controlIndex = controlIndex, 
             controlProbes = controlProbes, approx = approx, breaks = breaks)
-		#gc()
+##		#gc()
     }
     if (grepl("median", method)) {
         if (is.null(controlIndex)) {
@@ -1042,7 +1042,7 @@ normalizeWithinSamples <- function (dat, copy=TRUE, method = "loess",
         pm(dat) <- 2^datPm
     }
     dat <- scaleSamples(dat, copy=copy, scale=scale)
-	gc()
+##	gc()
     return(dat)
 }
 
@@ -1243,7 +1243,7 @@ normalizeBetweenSamples <- function(dat, copy=TRUE,
 				controlIndex <- getControlIndex(dat, controlProbes=controlProbes)
 			c2 <- SQNff(y=c2, copy=FALSE, log2=TRUE, 
 				ctrl.id=controlIndex, idx=idx)
-			gc()	
+##			gc()	
 		}
 		assayDataElement(dat, "channel1") <- c1
 		assayDataElement(dat, "channel2") <- c2

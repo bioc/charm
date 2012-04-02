@@ -10,7 +10,7 @@ Imports: BSgenome, Biobase, oligo (>= 1.11.31),
 	oligoClasses(>= 1.17.39), ff, preprocessCore, methods, stats,
 	Biostrings, IRanges, siggenes, nor1mix, gtools, grDevices,
 	graphics, utils, limma, parallel, sva(>= 3.1.2)
-Suggests: charmData, BSgenome.Hsapiens.UCSC.hg18
+Suggests: charmData, BSgenome.Hsapiens.UCSC.hg18, sva
 Description: This package implements analysis tools for DNA methylation  data generated using Nimblegen microarrays and the McrBC protocol. It finds differentially methylated regions between samples, calculates percentage methylation estimates and includes array quality assessment tools.
 License: LGPL (>= 2)
 LazyLoad: yes

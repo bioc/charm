@@ -54,7 +54,7 @@ if (FALSE) {
 	        # adjust enriched background probes
 	        Zhat  <- predict.trls(fit, bgX, bgY)
 	        bgEn <- bgEn - Zhat
-			rm(fit); gc()
+			rm(fit); ##gc()
 	        # fit surface to total probes
 	        Z     <- tot - median(tot)
 	        fit   <- surf.ls(6, X, Y, Z)
@@ -64,7 +64,7 @@ if (FALSE) {
 	        # adjust total background probes
 	        Zhat  <- predict.trls(fit, bgX, bgY)
 	        bgTot <- bgTot - Zhat    
-			rm(fit); gc()
+			rm(fit);## gc()
 
 			pms[,i, "channel1"] <- 2^tot
 			pms[,i, "channel2"] <- 2^en
