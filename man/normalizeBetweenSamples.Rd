@@ -66,14 +66,14 @@ Martin Aryee <aryee@jhu.edu>
 		setwd(dataDir)
 		rawData <- readCharm(files=pd$filename, sampleKey=pd)
 		# Correct spatial artifacts
-##		dat <- spatialAdjust(rawData)
+		dat <- spatialAdjust(rawData)
 		# Remove background signal
-##		dat <- bgAdjust(dat)
+		dat <- bgAdjust(dat)
 		# Find non-CpG control probes
-##		ctrlIdx <- getControlIndex(rawData, subject=Hsapiens)
+		ctrlIdx <- getControlIndex(rawData, subject=Hsapiens)
 		# Within-sample normalization
-##		dat <- normalizeWithinSamples(dat, controlIndex=ctrlIdx)
+		dat <- normalizeWithinSamples(dat, controlIndex=ctrlIdx)
 		# Within-sample normalization
-##		dat <- normalizeBetweenSamples(dat)
+		dat <- normalizeBetweenSamples(dat)
 	}
 }
