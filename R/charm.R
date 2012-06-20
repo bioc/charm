@@ -1844,14 +1844,14 @@ dmrFinder <- function(eset=NULL, groups, p=NULL, l=NULL, chr=NULL, pos=NULL, pns
           if(is.null(p)) {
               colnames(res[[r]]) <- sub("p1", "m1", colnames(res[[r]]))
 	      colnames(res[[r]]) <- sub("p2", "m2", colnames(res[[r]]))
-              mat  = cbind(rowMedians(l[,grp1]), rowMedians(l[,grp2]))
+              mat  = cbind(rowMedians(l[,grp1,drop=FALSE]), rowMedians(l[,grp2,drop=FALSE]))
               matr = t(apply(res[[r]][,c("indexStart","indexEnd")],1,
                              function(se) colMeans(mat[se[1]:se[2],,drop=FALSE])))
               res[[r]]$m1 = matr[,1]
               res[[r]]$m2 = matr[,2]
               diff = res[[r]]$m1 - res[[r]]$m2
           } else {
-              mat  = cbind(rowMedians(p[,grp1]), rowMedians(p[,grp2]))
+              mat  = cbind(rowMedians(p[,grp1,drop=FALSE]), rowMedians(p[,grp2,drop=FALSE]))
               matr = t(apply(res[[r]][,c("indexStart","indexEnd")],1,
                              function(se) colMeans(mat[se[1]:se[2],,drop=FALSE])))
               res[[r]]$p1 = matr[,1]

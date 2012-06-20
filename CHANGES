@@ -1,3 +1,9 @@
+v2.3.1    
+Added ",drop=FALSE" to cbind calls at the end of dmrFinder.
+
+v2.3.0
+Version number bumped. No code changes.
+
 v2.1.14
 Expanded the explanation of the rob argument to dmrFind in the dmrFind help file.
 
