@@ -1,3 +1,6 @@
+v2.3.2
+Fixed a typo in oApply method definition for ff_matrix objects.
+
 v2.3.1    
 Added ",drop=FALSE" to cbind calls at the end of dmrFinder.
 

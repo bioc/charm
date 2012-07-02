@@ -38,8 +38,7 @@ setMethod("oApply", "ff_matrix",
 				open(object2)
 	        	out2 <- clone(object2)
 			}
-	    }
-	    else {
+	    } else {
 	        out1 <- object1
 			if (!missing(object2))
 				out2 <- object2
