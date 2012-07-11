@@ -297,6 +297,7 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
         ##Obtain FDR estimates:
         stopifnot(nrow(nullnum)==nrow(orig_tab))
         qv = rowMeans(nullnum)/seq(1,nrow(orig_tab))
+        orig_tab$qvalue0 = round(pmin(1,qv), dig)
         orig_tab$qvalue = round(monotonic(pmin(1,qv)), dig)
     }
     if("pool"%in%method) {
@@ -304,7 +305,8 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
         Fn = ecdf(nulldist + (1e-9))
         pv = 1-Fn(abs(orig_tab[,dmr$args$sortBy]))
         orig_tab$pvalue.pool = round(pv,dig)
-        orig_tab$qvalue.pool = round(edge.qvalue(pv)$qvalues,dig)
+        qv = try(edge.qvalue(pv)$qvalues, silent=TRUE) #Unfortunately for some reason the error message from this function isn't actually an error message but a message, so it can't be suppressed. If the error comes up, the output of the function is 1 for some reason.  So here I catch the error by putting $qvalues here, since it won't work if the output is 1.
+        orig_tab$qvalue.pool = ifelse(inherits(qv,"try-error"), NA, round(qv,dig))
     }
     if("fwer"%in%method) {
         maxs = sapply(nullnum0, function(x) x[[3]])
@@ -448,8 +450,8 @@ edge.qvalue <- function(p,lambda = seq(0, 0.9, 0.05), pi0.method = "smoother",
 err.msg <- function(err.func = "edge",msg) {
  cat('\n')
  cat('\t')
- cat('ERROR in the',err.func,'function: ','\n')
- cat('ERROR in the',err.func,'function: ','\n')
+# cat('ERROR in the',err.func,'function: ','\n')
+ cat('Problem in the',err.func,'function: ','\n')
  cat('\t',msg,'\n\n')
 }
 

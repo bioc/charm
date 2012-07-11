@@ -49,7 +49,7 @@ Then, for iteration k, obtain a column-resampled version of R, Q (resampling wit
 }
 
 \value{
-the dmr table in your dmr object (dmr$dmrs), with an additional column ("qvalue") for the Fdr q-value (if method includes "direct"), additional columns for the pooled estimates of the p-values and q-values (if method includes "pool"), and an additional column for the FWER-adjusted p-values (if method includes "fwer") (see method argument).
+the dmr table in your dmr object (dmr$dmrs), with an additional column ("qvalue") for the Fdr q-value (if method includes "direct"), additional columns for the pooled estimates of the p-values and q-values (if method includes "pool"), and an additional column for the FWER-adjusted p-values (if method includes "fwer") (see method argument).  There is also a column called qvalue0 which is just the qvalue column before enforcing monotonicity.
 }
 
 \author{

@@ -1,3 +1,6 @@
+v2.3.3
+Added qvalue0 column to output of qval when method="direct" which contains the qvalue column before enforcing monotonicity.  Also changed the code in the method="pool" clause to use try to catch errors without halting the function.
+
 v2.3.2
 Fixed a typo in oApply method definition for ff_matrix objects.
 
