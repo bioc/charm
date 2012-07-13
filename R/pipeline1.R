@@ -230,7 +230,7 @@ loessPns <- function(stat, se=NULL, pnsIndexes, pos, numProbes = 8, verbose=TRUE
 ######################################################################
 ######################################################################
 
-qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE, method="direct") {
+qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE, method=c("direct","fwer")) {
     if(!any(c("direct","pool","fwer")%in%method)) stop("method must = direct, pool, or fwer.")
     #require(parallel)
     if(is.null(p) & is.null(logitp)) stop("Either p or logitp must be provided (the same as you provided to dmrFind when it produced dmr).")
@@ -312,7 +312,7 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
         maxs = sapply(nullnum0, function(x) x[[3]])
         Fnn = ecdf(maxs + (1e-9))
         pvv = 1-Fnn(abs(orig_tab[,dmr$args$sortBy]))
-        orig_tab$pvalue.fwer = round(pvv, 7) #max(1,nchar(numiter)-1)
+        orig_tab$pvalue.fwer = round(pvv, dig) #max(1,nchar(numiter)-1)
     }
     
     if(return.permutations) return(list(q=orig_tab, permutations=colsamp)) else return(orig_tab)
