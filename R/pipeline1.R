@@ -306,7 +306,7 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
         pv = 1-Fn(abs(orig_tab[,dmr$args$sortBy]))
         orig_tab$pvalue.pool = round(pv,dig)
         qv = try(edge.qvalue(pv)$qvalues, silent=TRUE) #Unfortunately for some reason the error message from this function isn't actually an error message but a message, so it can't be suppressed. If the error comes up, the output of the function is 1 for some reason.  So here I catch the error by putting $qvalues here, since it won't work if the output is 1.
-        orig_tab$qvalue.pool = ifelse(inherits(qv,"try-error"), NA, round(qv,dig))
+        if(inherits(qv,"try-error")) orig_tab$qvalue.pool = NA else orig_tab$qvalue.pool = round(qv,dig)
     }
     if("fwer"%in%method) {
         maxs = sapply(nullnum0, function(x) x[[3]])
