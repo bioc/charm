@@ -230,8 +230,14 @@ loessPns <- function(stat, se=NULL, pnsIndexes, pos, numProbes = 8, verbose=TRUE
 ######################################################################
 ######################################################################
 
-qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE, method=c("direct","fwer")) {
+qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE, method=c("direct","fwer"), fwer.num=c(1,5)) {
     if(!any(c("direct","pool","fwer")%in%method)) stop("method must = direct, pool, or fwer.")
+    if("fwer"%in%method) {
+        stopifnot(is.numeric(fwer.num))
+        if(!all(fwer.num%%1==0)) stop("fwer.num value(s) must be integers.")
+        if(!all(fwer.num>0)) stop("fwer.num value(s) must be >0.")
+        fwer.num = sort(fwer.num)
+    }
     #require(parallel)
     if(is.null(p) & is.null(logitp)) stop("Either p or logitp must be provided (the same as you provided to dmrFind when it produced dmr).")
     if(!is.null(p) & "cleanp"%in%names(dmr)) {
@@ -275,16 +281,19 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
         dmr2 = dmrFind(logitp= n_ij + r_ij[,colsamp[h,]], svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose, rob=dmr$args$rob, k=dmr$args$k)
         ret = vector("list",3)
         ## abs() here makes these tests 2-sided:
+        stats = abs(dmr2$dmrs[,dmr$args$sortBy])
         if("direct"%in%method) {
-            if(nrow(dmr2$dmrs)==0) add=0 else add = abs(dmr2$dmrs[,dmr$args$sortBy])
+            if(nrow(dmr2$dmrs)==0) add=0 else add = stats
             #rm(dmr2); gc(); gc()
             ret[[1]] = counts(add, abs(orig_tab[,dmr$args$sortBy]))
         }
         if("pool"%in%method) {
-            if(nrow(dmr2$dmrs)>0) ret[[2]] = abs(dmr2$dmrs[,dmr$args$sortBy])
+            if(nrow(dmr2$dmrs)>0) ret[[2]] = stats
         }
         if("fwer"%in%method) {
-            if(nrow(dmr2$dmrs)==0) ret[[3]] = 0 else ret[[3]] = max(abs(dmr2$dmrs[,dmr$args$sortBy]))
+            if(nrow(dmr2$dmrs)==0) ret[[3]] = rep(0,length(fwer.num)) else ret[[3]] = sort(stats,decreasing=TRUE)[fwer.num] #will be NA for fwer.num[i] if length(stat)<fwer.num[i]
+            ret[[3]][is.na(ret[[3]])] = 0
+            names(ret[[3]]) = fwer.num
         }
         ret
     }
@@ -309,10 +318,16 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
         if(inherits(qv,"try-error")) orig_tab$qvalue.pool = NA else orig_tab$qvalue.pool = round(qv,dig)
     }
     if("fwer"%in%method) {
-        maxs = sapply(nullnum0, function(x) x[[3]])
-        Fnn = ecdf(maxs + (1e-9))
-        pvv = 1-Fnn(abs(orig_tab[,dmr$args$sortBy]))
-        orig_tab$pvalue.fwer = round(pvv, dig) #max(1,nchar(numiter)-1)
+        fwerm = matrix(NA,nrow=nrow(orig_tab),ncol=length(fwer.num))
+        colnames(fwerm) = paste("pvalue.fwer",fwer.num,sep="")
+        colnames(fwerm)[fwer.num==1] = "pvalue.fwer"
+        for(i in 1:length(fwer.num)) {
+            maxs = sapply(nullnum0, function(x) x[[3]][i])
+            Fnn = ecdf(maxs + (1e-9))
+            pvv = 1-Fnn(abs(orig_tab[,dmr$args$sortBy]))
+            fwerm[,i] = round(pvv, dig)
+        }
+        orig_tab = cbind(orig_tab,fwerm)
     }
     
     if(return.permutations) return(list(q=orig_tab, permutations=colsamp)) else return(orig_tab)

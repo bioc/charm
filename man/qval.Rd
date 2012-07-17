@@ -7,7 +7,7 @@ Obtain False Discovery Rate q-values for the DMR candidates returned by dmrFind.
 Obtain False Discovery Rate q-values for the DMR candidates returned by dmrFind.
 }
 \usage{
-qval(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE, method="direct")
+qval(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALSE, mc=1, return.permutations=FALSE, method=c("direct","fwer"), fwer.num=c(1,5))
 }
 \arguments{
   \item{p}{
@@ -37,6 +37,9 @@ if TRUE, also return a matrix defining the resampling at each iteration.
   \item{method}{
 if "direct" (the default), the resulting table will have an additional column ("qvalue") with the direct estimate of the FDR qvalue as described below. If "pool", the resulting table will have additional columns ("pvalue.pool" and "qvalue.pool") with the p-values and corresponding q-values obtained as the proportion of statistics in the null distribution that are greater than or equal to the observed statistic, where the null distribution is obtained by simply pooling together all the statistic vectors from all iterations. If "fwer", the resulting table will have an additional column ("pvalue.fwer") with the p-value adjusted for control of the family-wise error rate (obtained as the proportion of maximum statistics (across all iterations) that are greater than or equal to the observed statistic).  More than one value for method may be specified.
 }
+  \item{fwer.num}{
+positive integer vector, needed if method argument includes "fwer".  For each number, a separate output column will be returned with the FWER(n)-controlling adjusted p-values, where FWER(n) is defined as the probability of making n or more false discoveries (type I errors).
+}
 }
 
 \details{
@@ -53,7 +56,7 @@ the dmr table in your dmr object (dmr$dmrs), with an additional column ("qvalue"
 }
 
 \author{
-Martin Aryee <aryee@jhu.edu>, Peter Murakami, Rafael Irizarry
+Martin Aryee, Peter Murakami <pmurakam@jhsph.edu>, Rafael Irizarry
 }
 \seealso{
 \code{\link{dmrFind}}, \code{\link{plotDMRs}}, \code{\link{plotRegions}}

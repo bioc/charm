@@ -1,3 +1,6 @@
+v2.3.6
+Added fwer.num option to qval function.  Also changed package maintainer to Peter Murakami.
+
 v2.3.5
 Made default qval method c("direct","fwer") instead of just "direct".  Also changed the default rounding of the pvalue.fwer output to that it's controlled by the digits argument rather than hardcoded as 7.
 
