@@ -7,7 +7,7 @@ Plot user-provided regions.
 Plot user-provided regions.
 }
 \usage{
-plotRegions(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.islands, exposure, exposure.continuous=FALSE, outfile="./myregions.pdf", all.points=TRUE, plot.these=NULL, ADD=3000, cols=c("black","red","blue","gray","green","orange","brown"), legend.size=1, smoo="loess", SPAN=300, DELTA=36, panel3="none", G=NULL, grs=NULL)
+plotRegions(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.islands, exposure, exposure.continuous=FALSE, outfile="./myregions.pdf", which_lines=NULL, which_points=which_lines, ADD=3000, cols=c("black","red","blue","gray","green","orange","brown"), legend.size=1, smoo="loess", SPAN=300, DELTA=36, panel3="none", G=NULL, grs=NULL)
 }
 \arguments{
   \item{thetable}{
@@ -40,11 +40,11 @@ The covariate of interest.
   \item{exposure.continuous}{
 set to TRUE if exposure is a continuous variable.
 }
-  \item{all.points}{
-if TRUE, plot the points for all groups.  If FALSE, only for the 2 groups being compared.
+  \item{which_lines}{
+vector specifying which groups (unique elements of exposure) to plot the lines for.  If NULL (the default), plots lines for all groups.  Only applies if exposure is categorical.
 }
-   \item{plot.these}{
-if all.points=FALSE (and covariate is not continuous), then which groups do you want to plot?
+   \item{which_points}{
+vector specifying which groups (unique elements of exposure) to plot the points for.  If NULL (the default), plots points for all groups.  Only applies if exposure is categorical.
 }
   \item{ADD}{
 Number of base pairs to plot on either side of each DMR candidate (if it is covered on the array).

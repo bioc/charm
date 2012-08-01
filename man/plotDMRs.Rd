@@ -7,7 +7,7 @@ Plot differentially methylated regions (DMRs) found using the dmrFind function.
 Plot differentially methylated regions (DMRs) from tiling microarray data that were identified using the dmrFind function.
 }
 \usage{
-plotDMRs(dmrs, Genome, cpg.islands, exposure, outfile, which_plot=1:50, all.points=TRUE, plot.these=NULL, ADD=3000, cols=c("black","blue","red","gray","brown","pink","orange"), legend.size=1, smoo="loess", SPAN=300, DELTA=36, point.info=FALSE, pch.groups=NULL, panel3="pvalues", G=NULL, seq=NULL)
+plotDMRs(dmrs, Genome, cpg.islands, exposure, outfile, which_plot=1:50, which_lines=NULL, which_points=which_lines, ADD=3000, cols=c("black","blue","red","gray","brown","pink","orange"), legend.size=1, smoo="loess", SPAN=300, DELTA=36, point.info=FALSE, pch.groups=NULL, panel3="pvalues", G=NULL, seq=NULL)
 }
 \arguments{
   \item{dmrs}{
@@ -28,11 +28,11 @@ the name of the file to save (including the full path)
   \item{which_plot}{
 numeric vector of indices identifying which DMR candidates from dmrs$dmrs to plot.
 }
-  \item{all.points}{
-if TRUE, plot the points for all groups.  If FALSE, only for the 2 groups being compared.
+  \item{which_lines}{
+vector specifying which groups (unique elements of exposure) to plot the lines for.  If NULL (the default), plots lines for all groups.  Only applies if exposure is categorical.
 }
-   \item{plot.these}{
-if all.points=FALSE (and covariate is not continuous), then which groups do you want to plot?
+   \item{which_points}{
+vector specifying which groups (unique elements of exposure) to plot the points for.  If NULL (the default), plots points for all groups.  Only applies if exposure is categorical.
 }
   \item{SPAN}{
 see DELTA. Only used if smoo="loess"

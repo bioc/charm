@@ -473,7 +473,7 @@ err.msg <- function(err.func = "edge",msg) {
 ######################################################################
 ######################################################################
 
-plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.pdf", which_plot=1:50, all.points=TRUE, plot.these=NULL, ADD=3000, cols=c("black","blue","red","gray","brown","pink","orange"), legend.size=1, smoo="loess", SPAN=300, DELTA=36, point.info=FALSE, pch.groups=NULL, panel3="pvalues", G=NULL, seq=NULL) {
+plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.pdf", which_plot=1:50, which_lines=NULL, which_points=which_lines, ADD=3000, cols=c("black","blue","red","gray","brown","pink","orange"), legend.size=1, smoo="loess", SPAN=300, DELTA=36, point.info=FALSE, pch.groups=NULL, panel3="pvalues", G=NULL, seq=NULL) {
 
     args = dmrs$args
     if(panel3=="G") {      
@@ -499,7 +499,8 @@ plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.p
         groups = as.numeric(factor(exposure))
         gNames = levels(factor(exposure))
         stopifnot(length(cols)>=length(unique(exposure)))
-        if(!all.points) stopifnot(all(plot.these%in%gNames))
+        if(!is.null(which_points)) if(!all(which_points%in%gNames)) stop("which_points not all in exposure")
+        if(!is.null(which_lines)) if(!all(which_lines%in%gNames)) stop("which_lines not all in exposure")
         if(!is.null(pch.groups)) stopifnot(length(pch.groups)==length(exposure))
     }
     dmrs$dmrs$chr = as.character(dmrs$dmrs$chr)   
@@ -524,8 +525,13 @@ plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.p
     }
 
     if(!cont) {
-        if(all.points) ind = 1:length(exposure) else ind = which(exposure%in%plot.these)
+        ## Legend:
+        if(is.null(which_lines)|is.null(which_points)) indLeg = 1:length(gNames) else indLeg = which(gNames%in%union(which_lines,which_points))
+        ## Lines:
         gIndexes=split(1:ncol(dmrs$cleanp),groups)
+        if(is.null(which_lines)) indL = 1:length(gIndexes) else indL = which(gNames%in%which_lines)
+        ## Points:
+        if(is.null(which_points)) ind = 1:length(exposure) else ind = which(exposure%in%which_points)
         if(!is.null(pch.groups)) {
             thepch = as.numeric(factor(pch.groups))[ind]
             thepch.lb = tapply(thepch, as.character(pch.groups)[ind],unique)
@@ -552,7 +558,7 @@ plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.p
                   xlim=range(xx), ylim=c(0,1), ylab="Methylation", xaxt="n", xlab="",
                   main=paste("DMR ",i," - ",dmrs$dmrs$chr[i],":",dmrs$dmrs$start[i],"-", 
                              dmrs$dmrs$end[i],sep=""),las=1, pch=thepch)
-          for(j in seq(along=gIndexes)) {
+          for(j in indL) {
               yy=rowMeans(dmrs$cleanp[Index,gIndexes[[j]],drop=FALSE])
               if(smoo=="runmed") {
                   yy2 = runmed(yy,3,endrule="constant")
@@ -562,7 +568,7 @@ plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.p
               }
               lines(xx,yy2,col=cols[as.numeric(names(gIndexes))[j]],lwd=2)
           }
-          legend("topleft",gNames,col=cols[seq(along=gNames)],lty=1,lwd=2,cex=legend.size)
+          legend("topleft",gNames[indLeg],col=cols[indLeg],lty=1,lwd=2,cex=legend.size)
           if(!is.null(pch.groups)) legend("topright", pch=thepch.lb, legend=names(thepch.lb))
       } else {
           pc = rowCor(dmrs$cleanp[Index,],exposure)
@@ -622,7 +628,7 @@ plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.p
     }
 }
 
-plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.islands, exposure, exposure.continuous=FALSE, outfile="./myregions.pdf", all.points=TRUE, plot.these=NULL, ADD=3000, cols=c("black","red","blue","gray","green","orange","brown"), legend.size=1, smoo="loess", SPAN=300, DELTA=36, panel3="none", G=NULL, grs=NULL) {
+plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.islands, exposure, exposure.continuous=FALSE, outfile="./myregions.pdf", which_lines=NULL, which_points=which_lines, ADD=3000, cols=c("black","red","blue","gray","green","orange","brown"), legend.size=1, smoo="loess", SPAN=300, DELTA=36, panel3="none", G=NULL, grs=NULL) {
 
     if(is.factor(exposure)|!exposure.continuous) cont=FALSE else cont=TRUE  
     if(panel3=="G") {
@@ -653,7 +659,8 @@ plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.island
         ### for plots, this defines the groups to be shown in color.
         groups = as.numeric(factor(exposure))
         gNames = levels(factor(exposure))
-        if(!all.points & !all(plot.these%in%exposure)) stop("plot.these not all in exposure")
+        if(!is.null(which_points)) if(!all(which_points%in%gNames)) stop("which_points not all in exposure")
+        if(!is.null(which_lines)) if(!all(which_lines%in%gNames)) stop("which_lines not all in exposure")
         if(length(cols)<length(unique(exposure))) stop("Not as many colors as groups.")
     }  
 
@@ -676,8 +683,13 @@ plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.island
     }
 
     if(!cont) {
-        if(all.points) ind = 1:length(exposure) else ind = which(exposure%in%plot.these)
+        ## Legend:
+        if(is.null(which_lines)|is.null(which_points)) indLeg = 1:length(gNames) else indLeg = which(gNames%in%union(which_lines,which_points))
+        ## Lines:
         gIndexes=split(1:ncol(cleanp),groups)
+        if(is.null(which_lines)) indL = 1:length(gIndexes) else indL = which(gNames%in%which_lines)
+        ## Points:
+        if(is.null(which_points)) ind = 1:length(exposure) else ind = which(exposure%in%which_points)
     }
 
     ###################################################################
@@ -704,7 +716,7 @@ plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.island
                     xlim=range(xx), ylim=c(0,1), ylab="Methylation", xaxt="n", xlab="",
                     main=paste("Region ",i," - ",thetable$chr[i],":",thetable$start[i],"-", 
                                thetable$end[i],sep=""),las=1)
-            for(j in seq(along=gIndexes)){
+            for(j in indL){
                 yy=rowMeans(cleanp[Index,gIndexes[[j]],drop=FALSE])
                 if(smoo=="runmed") {
                     yy2 = runmed(yy,3,endrule="constant")
@@ -714,7 +726,7 @@ plotRegions <- function(thetable, cleanp, chr, pos, seq=NULL, Genome, cpg.island
                 }
                 lines(xx,yy2,col=cols[as.numeric(names(gIndexes))[j]],lwd=2)
             }
-            legend("topleft",gNames,col=cols[seq(along=gNames)],lty=1,lwd=2,cex=legend.size)
+            legend("topleft",gNames[indLeg],col=cols[indLeg],lty=1,lwd=2,cex=legend.size)
         } else {
             pc = rowCor(cleanp[Index,],exposure)
             plot(xx,pc,ylim=c(-1,1), xlab="", xaxt="n", xlim=range(xx), las=1,

@@ -1,3 +1,6 @@
+v2.3.7
+Modified plotDMRs and plotRegions to enable plotting lines for only a subset of the groups (when exposure is categorical).
+
 v2.3.6
 Added fwer.num option to qval function.  Also changed package maintainer to Peter Murakami.
 

@@ -118,14 +118,14 @@ Martin Aryee, Peter Murakami <pmurakam@jhsph.edu>, Rafael Irizarry
         #### Plotting not run:
         ## Plot DMR candidates 1,2, and 4, for example.  First have to load a table of CpG islands.
         cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-hg18.txt", as.is=TRUE)
-        #plotDMRs(dmrs=thedmrs, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$tissue, outfile="./colon-liver.pdf", which_plot=c(1,2,4), all.points=FALSE, plot.these=c("colon","liver"), smoo="loess", ADD=3000, cols=c("black","red","blue"))
+        #plotDMRs(dmrs=thedmrs, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$tissue, outfile="./colon-liver.pdf", which_plot=c(1,2,4), which_points=c("colon","liver"), smoo="loess", ADD=3000, cols=c("black","red","blue"))
 
         ## Plot DMR candidates, and in the 3rd panel plot the difference in average green channel:
         dat0 = spatialAdjust(rawData, copy=FALSE)
         dat0 = bgAdjust(dat0, copy=FALSE)
         G = pm(dat0)[,,1] #from oligo
         G = G[Index,]
-        #plotDMRs(dmrs=thedmrs, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$tissue, outfile="./colon-liver2.pdf", which_plot=c(1), all.points=FALSE, plot.these=c("colon","liver"), smoo="loess", ADD=3000, cols=c("black","red","blue"), panel3="G", G=G, seq=seq)
+        #plotDMRs(dmrs=thedmrs, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$tissue, outfile="./colon-liver2.pdf", which_plot=c(1), which_points=c("colon","liver"), smoo="loess", ADD=3000, cols=c("black","red","blue"), panel3="G", G=G, seq=seq)
 
         ## Example if covariate of interest is continuous:
         pd$x = c(1,2,3,4,5,6)
@@ -140,7 +140,7 @@ Martin Aryee, Peter Murakami <pmurakam@jhsph.edu>, Rafael Irizarry
         #plotDMRs(dmrs=thedmrs2, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$groups, outfile="./test.pdf", which_plot=c(1), smoo="loess", ADD=3000, cols=c("black","red","blue"))
 
         ## Otherwise, if covariate of interest is continuous, plot will show correlation with covariate:
-        #plotDMRs(dmrs=thedmrs2, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$x, outfile="./x.pdf", which_plot=c(1), all.points=FALSE, plot.these=c("colon","liver"), smoo="loess", ADD=3000, cols=c("black","red","blue"))
+        #plotDMRs(dmrs=thedmrs2, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$x, outfile="./x.pdf", which_plot=c(1), smoo="loess", ADD=3000, cols=c("black","red","blue"))
 
         ## Plot arbitrary regions:
         mytable = thedmrs$dmrs[,c("chr","start","end")]
