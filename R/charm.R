@@ -53,7 +53,7 @@ setMethod("oApply", "ff_matrix",
 		}	
 	})
 
-
+## In these nodeFn methods the rows of the objects returned by fn must correspond to the rows of object1 and object2.  If the number of rows is more or less, you'll get an error.  If the number is the same but the order is wrong, then you won't (even worse).  Before the correction to getM for ff_matrix objects below, an error was returned because the returned object was only a subset of the rows.
 setMethod("nodeFn", c("integer", "matrix"),
 	function (cols, object1, object2, fn, ...) {
 	    if (length(cols) > 0) {
@@ -125,14 +125,24 @@ setMethod("getM", "TilingFeatureSet",
 setMethod("getM", "matrix", 
 	function(object1, object2, rows) log2(object1[rows,])-log2(object2[rows,]))
 
+#setMethod("getM", "ff_matrix", 
+#	function(object1, object2, rows) {
+#		ret <- oApply(object1=object1, object2=object2, copy=TRUE, 
+#			fn=function (object1, object2, rows)
+#			 	list(log2(object1[rows,])-log2(object2[rows,]), NULL),
+#			rows=rows)
+#		ret[[1]]	
+#	})	
+## Corrected version of getM for ff_matrix objects:
 setMethod("getM", "ff_matrix", 
 	function(object1, object2, rows) {
 		ret <- oApply(object1=object1, object2=object2, copy=TRUE, 
-			fn=function (object1, object2, rows)
-			 	list(log2(object1[rows,])-log2(object2[rows,]), NULL),
-			rows=rows)
-		ret[[1]]	
-	})	
+			fn=function (object1, object2)
+			 	list(log2(object1)-log2(object2), NULL))
+                ret2 <- ff(vmode="double", dim=c(length(rows), ncol(ret[[1]])))
+                for(cm in 1:ncol(ret[[1]])) ret2[,cm] = ret[[1]][rows,cm]                
+		ret2
+	})
 
 
 
