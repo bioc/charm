@@ -140,7 +140,8 @@ setMethod("getM", "ff_matrix",
 			fn=function (object1, object2)
 			 	list(log2(object1)-log2(object2), NULL))
                 ret2 <- ff(vmode="double", dim=c(length(rows), ncol(ret[[1]])))
-                for(cm in 1:ncol(ret[[1]])) ret2[,cm] = ret[[1]][rows,cm]                
+                for(cm in 1:ncol(ret[[1]])) ret2[,cm] = ret[[1]][rows,cm]
+                colnames(ret2) = colnames(ret[[1]])             
 		ret2
 	})
 

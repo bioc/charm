@@ -1,3 +1,6 @@
+v2.3.9
+Added the colnames to the output of getM for ff_matrix objects
+
 v2.3.8
 Fixed the getM method for ff_matrix objects, which produced an error when rows was specified previously.
 
