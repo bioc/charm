@@ -1,3 +1,6 @@
+v2.3.11
+Modified asff function to enable subsetting of columns in addition to rows
+
 v2.3.10
 Added the asff function and modified cmdsplot to accomodate p of class ff_matrix object.
 

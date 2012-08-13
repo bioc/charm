@@ -745,7 +745,7 @@ cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, o
     if(noXorY) ind1 = intersect(ind1, which(!thechr%in%c("chrX","chrY")))
     thechr = thechr[ind1]
     if("ff_matrix" %in% class(p)) {
-        p3 = asff(p,ind1)
+        p3 = asff(p, rows=ind1)
         v = as.vector(ffapply(X=p3, MARGIN=1, AFUN="sd", RETURN=TRUE, FF_RETURN=FALSE))
     } else {
         p3 = p[ind1,]
