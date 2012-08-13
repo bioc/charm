@@ -5,6 +5,15 @@ bgindex <- oligo:::bgindex # method
 
 setOldClass("ff_matrix")
 
+asff <- function(ffm, rows) { #subset ff_matrix object rows but keep it an ff_matrix object
+    stopifnot(is.numeric(rows))
+    ret2 <- ff(vmode="double", dim=c(length(rows),ncol(ffm)))
+    for(cm in 1:ncol(ffm)) ret2[,cm] = ffm[rows,cm]
+    colnames(ret2) = colnames(ffm)
+    rownames(ret2) = rownames(ffm)[rows]
+    ret2
+}
+
 #######################
 ## oApply and nodeFn ##
 #######################

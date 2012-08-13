@@ -1,3 +1,6 @@
+v2.3.10
+Added the asff function and modified cmdsplot to accomodate p of class ff_matrix object.
+
 v2.3.9
 Added the colnames to the output of getM for ff_matrix objects
 

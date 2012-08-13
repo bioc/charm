@@ -730,6 +730,7 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
 cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, outfile="./cmds_topN.pdf", topN=c(100000,1000)) {
     #require(genefilter) #for rowSds()
     stopifnot(expcol%in%colnames(pData(rawData)))
+    stopifnot(is.numeric(okqc))
     if(missing(labcols)) labcols = 1+1:length(unique(pData(rawData)[,expcol]))
 
     stopifnot(length(labcols)>=length(unique(pData(rawData)[,expcol])))
@@ -740,11 +741,17 @@ cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, o
     stopifnot(length(thechr)==length(pmindex(rawData)))
     stopifnot(length(thechr)==nrow(p))
 
-    thechr = thechr[okqc]
-    p = p[okqc,]
-    if(noXorY) p3=p[!thechr%in%c("chrX","chrY"),] else p3=p
-    
-    v = rowSds(p3)
+    ind1 = okqc
+    if(noXorY) ind1 = intersect(ind1, which(!thechr%in%c("chrX","chrY")))
+    thechr = thechr[ind1]
+    if("ff_matrix" %in% class(p)) {
+        p3 = asff(p,ind1)
+        v = as.vector(ffapply(X=p3, MARGIN=1, AFUN="sd", RETURN=TRUE, FF_RETURN=FALSE))
+    } else {
+        p3 = p[ind1,]
+        v = rowSds(p3)
+    }
+
     o = order(v, decreasing=TRUE)
     lcol = labcols[as.numeric(factor(rank(pData(rawData)[,expcol])))]
     subt = paste("Does",ifelse(noXorY," not "," "),"use probes in sex chromosomes.",sep="")
