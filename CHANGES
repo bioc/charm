@@ -1,3 +1,6 @@
+v2.3.12
+Modified controlQC to handle ff_matrix objects
+
 v2.3.11
 Modified asff function to enable subsetting of columns in addition to rows
 

@@ -708,24 +708,38 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
     #tmp = sapply(strsplit(pData(rawData)[,"arrayUT"],"_"), function(x) x[1])
     stopifnot(all(colnames(p2[,ord])==pData(rawData)[ord,IDcol]))
 
-    medm = apply(p2[-cont,ord],2,median)
+    big = "ff_matrix"%in%class(p2)
     medc = apply(p2[cont,ord],2,median)
+    if(big) {
+        qs = matrix(NA,nrow=length(ord),ncol=3)
+        for(j in 1:length(ord)) qs[j,] = quantile(p2[-cont,ord[j]], prob=c(0.25,0.5,0.75))     
+        medm = qs[,2]
+    } else medm = apply(p2[-cont,ord],2,median)
     medd = medm-medc
-
+    
     pdf(file=outfile, width=width, height=height)
     par(mfrow=c(3,1))
-    boxplot(p2[-cont,ord], outline=FALSE, names=pData(rawData)[ord,IDcol], las=3,
-            ylab="M (no normalization)", main="non-control probes", cex.lab=1.5, ylim=ylimits)
-    abline(h=0,lty=3)
+    if(big) {
+        plot(medm, xaxt="n", ylab="IQR of M (no normalization)",
+             main="non-control probes", ylim=ylimits)
+        axis(1, at=1:length(ord), labels=pData(rawData)[ord,IDcol], las=3)#, cex.axis=1.5)
+        for(i in 1:nrow(qs)) segments(x0=i,y0=qs[i,1],x1=i,y1=qs[i,3])
+    } else {
+        boxplot(p2[-cont,ord], outline=FALSE, names=pData(rawData)[ord,IDcol],
+                las=3, ylab="M (no normalization)", main="non-control probes",
+                cex.lab=1.5, ylim=ylimits)     
+    }
+    abline(h=0,lty=3)    
     boxplot(p2[cont,ord], outline=FALSE, xaxt="n", las=3, ylab="M (no normalization)",
             main="control probes", cex.lab=1.5, ylim=ylimits)
-    abline(h=0,lty=3)
+    abline(h=0,lty=3)    
     plot(medd~c(1:ncol(p2[,ord])),main="median difference",xlab="",ylab="",las=3)
     abline(h=0,lty=3)
     dev.off()
 
     data.frame(non_control=medm, control=medc, diff=medd)
 }
+
 
 cmdsplot <- function(labcols, expcol, rawData, p, okqc=1:nrow(p), noXorY=TRUE, outfile="./cmds_topN.pdf", topN=c(100000,1000)) {
     #require(genefilter) #for rowSds()
