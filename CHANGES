@@ -1,3 +1,6 @@
+v2.3.13
+Enclosed first dosmooth in try() in dmrFind to prevent an error in limma:::loessFit on OS X and Windows.
+
 v2.3.12
 Modified controlQC to handle ff_matrix objects
 

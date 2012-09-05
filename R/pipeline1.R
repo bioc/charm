@@ -82,7 +82,11 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     ## Find DMRs:
     if(verbose) cat("Smoothing\n")
     pnsIndexes = split(seq(along = pns), pns)
-    sbeta = dosmooth(stat=beta, pnsIndexes=pnsIndexes, pos=pos, smoo=smoo, verbose=verbose, k=k, SPAN=SPAN, DELTA=DELTA, sigma=sigma) #sigma only gets used if smoo=="weighted.loess"
+    sbeta = try(dosmooth(stat=beta, pnsIndexes=pnsIndexes, pos=pos, smoo=smoo, verbose=verbose, k=k, SPAN=SPAN, DELTA=DELTA, sigma=sigma), silent=TRUE) #sigma only gets used if smoo=="weighted.loess"
+    if(inherits(sbeta,"try-error")) {
+        warning("Problem using smoo=weighted.loess, so loess being used instead.")
+        sbeta = dosmooth(stat=beta, pnsIndexes=pnsIndexes, pos=pos, smoo="loess", verbose=verbose, k=k, SPAN=SPAN, DELTA=DELTA, sigma=NULL)
+    }
     if(use=="sbeta") { ##Finding based on sbeta:
         swald = NULL
         odmrs = regionFinder(x=sbeta,pns,chr,pos,cutoff=quantile(sbeta,Q),verbose=verbose)
