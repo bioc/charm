@@ -26,7 +26,7 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     } else stop(errmsg)
 
     if(is.null(svs)) {
-        require(sva)
+#        require(sva)
         cat("Running SVA\n")
         svaobj = sva(logitp,mod=mod,mod0=mod0,method="irw",...)
         svs = svaobj$sv
