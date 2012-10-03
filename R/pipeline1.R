@@ -1,5 +1,5 @@
 
-dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, pos, only.cleanp=FALSE, only.dmrs=FALSE, rob=TRUE, use.limma=FALSE, smoo="weighted.loess", k=3, SPAN=300, DELTA=36, use="sbeta", Q=0.99, min.probes=3, min.value=0.075, keepXY=TRUE, sortBy="area.raw", verbose=TRUE, ...) {
+dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, pos, only.cleanp=FALSE, only.dmrs=FALSE, rob=TRUE, use.limma=FALSE, smoo="weighted.loess", k=3, SPAN=300, DELTA=36, use="sbeta", Q=0.99, min.probes=3, min.value=0.075, keepXY=TRUE, sortBy="area.raw", verbose=TRUE, vfilter=NULL, nsubsets=50, ...) {
     if(only.cleanp & only.dmrs) stop("only.cleanp and only.dmrs cannot both be TRUE.")
     if(!sortBy%in%c("area","area.raw","avg","max")) stop("sortBy must be area, area.raw, avg, or max.")
     if(min.value<0 | min.value>1) stop("min.value must be between 0 and 1.")
@@ -8,13 +8,15 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     for(j in 1:ncol(mod0)) if(!all(mod0[,j]==mod[,j])) stop("This function requires that all columns of mod not in mod0 (i.e., the column(s) for your covariate of interest) come after the columns of mod0, i.e., the first n columns of mod must be the same as mod0, where n is the number of columns in mod0.") # If this function were modified to enable the covariate of interest columns to come at the start or elsewhere, e.g., changing mod[,-c(1:ncol(mod0)),drop=FALSE] below, it would require matching on column names of mod and mod0, but then the function would require column names to be the same, a new requirement and one often not met for the intercept column.
 
     if(is.null(p) & is.null(logitp)) stop("Either p or logitp must be provided.")
+    if("ff_matrix" %in% c(class(p),class(logitp)) & is.null(vfilter)) message("If available memory is insufficient, try setting vfilter to use only a subset of probes in SVA.")
+    if("ff_matrix" %in% c(class(p),class(logitp)) & use.limma) stop("use.limma=TRUE will not work if p or logitp are ff_matrix objects")
     if(!is.null(p)) {
-        stopifnot(min(p)>=0 & max(p)<=1)
+        stopifnot(Min(p)>=0 & Max(p)<=1)
         stopifnot(ncol(p)==nrow(mod))
     }
     if(!is.null(logitp)) {
         stopifnot(ncol(logitp)==nrow(mod))
-    } else logitp = log(p)-log(1-p)
+    } else logitp = logit(p)
 
     errmsg = "coeff must be a character or numeric index for the column of mod that is the coefficient of interest."
     if(is.character(coeff)) {
@@ -28,10 +30,20 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     if(is.null(svs)) {
 #        require(sva)
         cat("Running SVA\n")
-        svaobj = sva(logitp,mod=mod,mod0=mod0,method="irw",...)
+
+        if (!is.null(vfilter)) {
+            if (vfilter < 100 | vfilter > dim(logitp)[1]) {
+                stop(paste("The number of genes used in sva (i.e., the vfilter argument) must be between 100 and", 
+                     dim(logitp)[1], "\n"))
+            }
+            tmpv = as.vector(ffapply(X=logitp, MARGIN=1, AFUN="var", RETURN=TRUE, FF_RETURN=FALSE))
+            ind = which(rank(-tmpv) < vfilter)
+            svaobj = sva(logitp[ind,],mod=mod,mod0=mod0,method="irw",vfilter=NULL,...)
+        } else svaobj = sva(logitp,mod=mod,mod0=mod0,method="irw",...)
+        gc(); gc()
         svs = svaobj$sv
     }
-    args = list(svs=svs, mod=mod, mod0=mod0, coeff=coeff, use.limma=use.limma, smoo=smoo, SPAN=SPAN, DELTA=DELTA, use=use, Q=Q, min.probes=min.probes, min.value=min.value, keepXY=keepXY, sortBy=sortBy, rob=rob, k=k) #save for obtaining q-values.
+    args = list(svs=svs, mod=mod, mod0=mod0, coeff=coeff, use.limma=use.limma, smoo=smoo, SPAN=SPAN, DELTA=DELTA, use=use, Q=Q, min.probes=min.probes, min.value=min.value, keepXY=keepXY, sortBy=sortBy, rob=rob, k=k, vfilter=vfilter, nsubsets=nsubsets) #save for obtaining q-values.
 
     svs = as.matrix(svs)
     svs = svs[,!duplicated(svs[1,]),drop=FALSE] #remove duplicate sv's
@@ -62,13 +74,30 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
         ##below is just bare version of lm
         if(verbose) cat("\nRegression\n")
         Hat=solve(t(X)%*%X)%*%t(X)
-        beta=(Hat%*%t(logitp))
         N=ncol(logitp)
-        sigma=genefilter::rowSds(logitp-t(X%*%beta))*sqrt((N-1)/(N-P))
-
-        ##Get cleanp:
-        cleanp=ilogit(logitp-t(X[,-no,drop=FALSE]%*%beta[-no,,drop=FALSE]))
-        colnames(cleanp)=colnames(logitp)
+        if("ff_matrix"%in%class(logitp)) {
+            sp = split(1:nrow(logitp), cut(1:nrow(logitp),nsubsets))
+            beta = NULL
+            sigma = NULL
+            cleanp <- ff(vmode = "double", dim = dim(logitp))
+            colnames(cleanp) = colnames(logitp)
+            rownames(cleanp) = rownames(logitp)
+            for(i in sp) {
+                beta2=(Hat%*%t(logitp[i,]))
+                sigma2=genefilter::rowSds(logitp[i,]-t(X%*%beta2))*sqrt((N-1)/(N-P))
+                beta = cbind(beta,beta2)               
+                sigma = c(sigma,sigma2)                   
+                ##Get cleanp:                
+                cleanp[i,] = ilogit(logitp[i,]-t(X[,-no,drop=FALSE]%*%beta2[-no,,drop=FALSE]))
+                rm(beta2,sigma2); gc(); gc()
+            }
+        } else {
+            beta=(Hat%*%t(logitp))
+            sigma=genefilter::rowSds(logitp-t(X%*%beta))*sqrt((N-1)/(N-P))
+            ##Get cleanp:
+            cleanp=ilogit(logitp-t(X[,-no,drop=FALSE]%*%beta[-no,,drop=FALSE]))
+            colnames(cleanp)=colnames(logitp)
+        }
         if(only.cleanp) return(cleanp)
   
         if(verbose) cat("Obtaining estimates for ",rownames(beta)[coiIndex],"\n")
@@ -105,7 +134,16 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
         if(verbose) message("Covariate recognized as categorical.")
         base = which(rowSums(mod[,-c(1:ncol(mod0)),drop=FALSE])==0)
         grp1 = which(mod[,coiIndex]==1)
-        mat = cbind(rowMeans(cleanp[,grp1,drop=FALSE]), rowMeans(cleanp[,base,drop=FALSE]))
+        if(!"ff_matrix"%in%class(cleanp)) {
+            mat = cbind(rowMeans(cleanp[,grp1,drop=FALSE]), rowMeans(cleanp[,base,drop=FALSE]))
+        } else {
+            mat = cbind(
+              as.vector(ffapply(X=asff(cleanp,columns=grp1), MARGIN=1,
+                                AFUN="mean", RETURN=TRUE, FF_RETURN=FALSE)),
+              as.vector(ffapply(X=asff(cleanp,columns=base), MARGIN=1,
+                                AFUN="mean", RETURN=TRUE, FF_RETURN=FALSE))
+              )
+        }
         ## Mean diff:
         res = t(apply(odmrs[,c("indexStart","indexEnd")],1,
                       function(se) colMeans(mat[se[1]:se[2],,drop=FALSE])))
@@ -120,7 +158,7 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
     } else { #covariate is continuous
         if(verbose) message("Covariate recognized as continuous.")
         contin = TRUE
-        mat = rowCor(m=cleanp,y=mod[,coiIndex])
+        mat = rowCor(m=cleanp,y=mod[,coiIndex], nsubsets=nsubsets)
         ## Mean correlation:
         x = apply(odmrs[,c("indexStart","indexEnd")],1,
                   function(se) median(mat[se[1]:se[2]]))
@@ -154,15 +192,27 @@ dmrFind <- function(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, p
    }
 }
 
-rowCor <- function(m, y) { #faster version of apply(m,1,function(x) cor(x,y))
+rowCor <- function(m, y, nsubsets=50) { #faster version of apply(m,1,function(x) cor(x,y))
     #require(genefilter)
-    stopifnot(is.matrix(m)|is.data.frame(m))
+    stopifnot(is.matrix(m)|is.data.frame(m)|"ff_matrix"%in%class(m))
     stopifnot(is.vector(y))
     stopifnot(ncol(m)==length(y))
     X = cbind(1,y)
     Hat=solve(t(X)%*%X)%*%t(X)
-    beta=t(Hat%*%t(m))[,"y"]
-    beta * sd(y)/rowSds(m)
+    if(!"ff_matrix"%in%class(m)) {
+        beta=t(Hat%*%t(m))[,"y"]
+        beta * sd(y)/rowSds(m)
+    } else {
+        sp = split(1:nrow(m), cut(1:nrow(m),nsubsets))
+        beta = NULL
+        for(i in sp) {
+            beta2 = t(Hat%*%t(m[i,]))[,"y"]
+            beta2 = beta2 * sd(y)/rowSds(m[i,])
+            beta = c(beta,beta2)
+            rm(beta2); gc(); gc()
+        }
+        beta
+    }
 }
 
 dosmooth <- function(stat, pnsIndexes, pos, smoo="runmed", k=3, SPAN=300, DELTA=36, sigma=NULL, verbose=TRUE) {
@@ -249,11 +299,11 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
     }
     if(!is.null(logitp)) {
         if("cleanp"%in%names(dmr)) if(nrow(dmr$cleanp)!=nrow(logitp) | ncol(dmr$cleanp)!=ncol(logitp)) stop("logitp must be the same as the logitp that you provided to dmrFind when it produced dmr.")
-    } else logitp = log(p)-log(1-p)
+    } else logitp = logit(p)
     #stopifnot(all(dmr$dmrs[,dmr$args$sortBy]>=0))
 
     ## Test that result is same as original:
-    dmr2 = dmrFind(logitp=logitp, svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose, rob=dmr$args$rob, k=dmr$args$k)
+    dmr2 = dmrFind(logitp=logitp, svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose, rob=dmr$args$rob, k=dmr$args$k, vfilter=dmr$args$vfilter, nsubsets=dmr$args$nsubsets)
     orig_tab = dmr$dmrs    
     TFvec = vector()
     for(hg in 1:ncol(dmr2$dmrs)) TFvec[hg] = isTRUE(all.equal(dmr2$dmrs[,hg],orig_tab[,hg]))
@@ -275,14 +325,14 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
     #fit0 = limma::lmFit(logitp,X0)
     #n_ij = fitted(fit0)
     ## To use less memory and go faster, do this instead of lmFit:
-    r_ij = lm_fit(dat=logitp,X=X,out="res")
-    n_ij = lm_fit(dat=logitp,X=X0,out="fit")
+    r_ij = lm_fit(dat=logitp,X=X,out="res",nsubsets=dmr$args$nsubsets)
+    n_ij = lm_fit(dat=logitp,X=X0,out="fit",nsubsets=dmr$args$nsubsets)
 
     colsamp = matrix(NA, nrow=numiter, ncol=ncol(r_ij))
     set.seed(seed)
     for(j in 1:nrow(colsamp)) colsamp[j,] = sample(1:ncol(r_ij),replace=TRUE)
     fun1 <- function(h, method) {
-        dmr2 = dmrFind(logitp= n_ij + r_ij[,colsamp[h,]], svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose, rob=dmr$args$rob, k=dmr$args$k)
+        dmr2 = dmrFind(logitp= n_ij + r_ij[,colsamp[h,]], svs=dmr$args$svs, mod=dmr$args$mod, mod0=dmr$args$mod0, only.cleanp=FALSE, only.dmrs=TRUE, coeff=dmr$args$coeff, use.limma=dmr$args$use.limma, smoo=dmr$args$smoo, SPAN=dmr$args$SPAN, DELTA=dmr$args$DELTA, use=dmr$args$use, Q=dmr$args$Q, min.probes=dmr$args$min.probes, min.value=dmr$args$min.value, pns=dmr$pns, chr=dmr$chr, pos=dmr$pos, keepXY=dmr$args$keepXY, sortBy=dmr$args$sortBy, verbose=verbose, rob=dmr$args$rob, k=dmr$args$k, vfilter=dmr$args$vfilter, nsubsets=dmr$args$nsubsets)
         ret = vector("list",3)
         ## abs() here makes these tests 2-sided:
         stats = abs(dmr2$dmrs[,dmr$args$sortBy])
@@ -337,14 +387,27 @@ qval <- function(p=NULL, logitp=NULL, dmr, numiter=500, seed=54256, verbose=FALS
     if(return.permutations) return(list(q=orig_tab, permutations=colsamp)) else return(orig_tab)
 }
 
-lm_fit <- function(dat, X, out) {
-    ## Use this instead of lmFit because this uses less memory and is faster.  Estimated betas are the same anyway--lmFit is only useful for (shrunk) se's, which we don't need for this.
-    Hat=solve(t(X)%*%X)%*%t(X)
-    if(out=="fit") {
-        return(t(X%*% (Hat%*%t(dat)) ))
-    } else if(out=="res") {
-        return(dat - t(X%*% (Hat%*%t(dat)) ))
-    } else stop("invalid out arg")
+lm_fit <- function(dat, X, out, nsubsets=50) {
+    ## Use this instead of lmFit because this uses less memory and is faster.  Estimated betas are the same anyway--lmFit is only useful for (shrunk) se's, which we don't need for this.  This also handles dat as an ff_matrix object.
+    Hat = solve(t(X)%*%X)%*%t(X)
+    if(!"ff_matrix"%in%class(dat)) {
+        if(out=="fit") {
+            return(t(X%*% (Hat%*%t(dat)) ))
+        } else if(out=="res") {
+            return(dat - t(X%*% (Hat%*%t(dat)) ))
+        } else stop("invalid out arg")
+    } else {
+        output = ff(vmode = "double", dim = dim(dat))
+        colnames(output) = colnames(dat)
+        rownames(output) = rownames(dat)
+        sp = split(1:nrow(dat), cut(1:nrow(dat),nsubsets))      
+        if(out=="fit") {
+            for(i in sp) output[i,] = t( X %*% (Hat%*%t(dat[i,])) )
+        } else if(out=="res") {
+            for(i in sp) output[i,] = dat[i,] - t( X %*% (Hat%*%t(dat[i,])) )      
+        } else stop("invalid out arg")
+        return(output)
+    }
 }
 counts <- function(x1,x2) {
     if(length(x1)==0) rep(0,length(x2)) else {
@@ -557,7 +620,7 @@ plotDMRs <- function(dmrs, Genome, cpg.islands, exposure, outfile="./dmr_plots.p
 
       xx=dmrs$pos[Index]
       if(!cont) {
-          cn = colnames(dmrs$cleanp[,ind])
+          cn = colnames(dmrs$cleanp)[ind]
           matplot(xx,dmrs$cleanp[Index,ind], col=cols[groups[ind]], cex=0.4,
                   xlim=range(xx), ylim=c(0,1), ylab="Methylation", xaxt="n", xlab="",
                   main=paste("DMR ",i," - ",dmrs$dmrs$chr[i],":",dmrs$dmrs$start[i],"-", 
@@ -824,8 +887,39 @@ plot_CpG <- function(thechr,xx,ocpgi,Genome,mcrbc=TRUE,xlab="",xaxt="n") {
 ######################################################################
 ######################################################################
 
-logit <- function(x) log(x)-log(1-x)
-ilogit <- function(x) 1/(1+exp(-x))
+logit <- function(x) {
+    if ("ff_matrix" %in% class(x) ) {
+        ret2 <- ff(vmode="double", dim=dim(x))
+        for(cm in 1:ncol(x)) ret2[,cm] = log(x[,cm])-log(1-x[,cm])
+        colnames(ret2) = colnames(x)
+        rownames(ret2) = rownames(x)
+        ret2
+    } else log(x)-log(1-x)
+}
+ilogit <- function(x) {
+    if ("ff_matrix" %in% class(x) ) {
+        ret2 <- ff(vmode="double", dim=dim(x))
+        for(cm in 1:ncol(x)) ret2[,cm] = 1/(1+exp(-x[,cm]))
+        colnames(ret2) = colnames(x)
+        rownames(ret2) = rownames(x)
+        ret2
+    } else 1/(1+exp(-x))
+}
+
+Min <- function(x) {
+    if ("ff_matrix" %in% class(x) ) {
+        ret2 = rep(NA,ncol(x))
+        for(cm in 1:ncol(x)) ret2[cm] = min(x[,cm])
+        min(ret2)
+    } else min(x)
+}
+Max <- function(x) {
+    if ("ff_matrix" %in% class(x) ) {
+        ret2 = rep(NA,ncol(x))
+        for(cm in 1:ncol(x)) ret2[cm] = max(x[,cm])
+        max(ret2)
+    } else max(x)
+}
 
 getSegments <- function(x,factor,cutoff=quantile(abs(x),0.99),verbose=TRUE){
 

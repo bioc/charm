@@ -7,14 +7,14 @@ Identify DMR candidates using a regression-based approach and correcting for bat
 Identify DMR candidates using a regression-based approach and correcting for batch effects.
 }
 \usage{
-dmrFind(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, pos, only.cleanp=FALSE, only.dmrs=FALSE, rob=TRUE, use.limma=FALSE, smoo="weighted.loess", k=3, SPAN=300, DELTA=36, use="sbeta", Q=0.99, min.probes=3, min.value=0.075, keepXY=TRUE, sortBy="area.raw", verbose=TRUE, ...)
+dmrFind(p=NULL, logitp=NULL, svs=NULL, mod, mod0, coeff, pns, chr, pos, only.cleanp=FALSE, only.dmrs=FALSE, rob=TRUE, use.limma=FALSE, smoo="weighted.loess", k=3, SPAN=300, DELTA=36, use="sbeta", Q=0.99, min.probes=3, min.value=0.075, keepXY=TRUE, sortBy="area.raw", verbose=TRUE, vfilter=NULL, nsubsets=50, ...)
 }
 \arguments{
   \item{p}{
-matrix of methylation percentage estimates. Either this or logitp must be provided.
+matrix of methylation percentage estimates. Either this or logitp must be provided. Can be an ff_matrix object.
 }
   \item{logitp}{
-matrix of logit-transformed methylation percentage estimates.  Either this or p must be provided. 
+matrix of logit-transformed methylation percentage estimates.  Either this or p must be provided. Can be an ff_matrix object.
 }
   \item{svs}{
 surrogate variables whose effect will be corrected for.  This should be svaobj$sv, where svaobj is the object returned by sva().  Setting svs=0 will result in sva not being used.
@@ -81,6 +81,12 @@ column of DMR table to sorty by.
 }
   \item{verbose}{
 print progress messages if TRUE.
+}
+  \item{vfilter}{
+vfilter argument to sva function.  The number of most variable probes to use when building SVs--must be between 100 and m, where m is the total number of probes.  vfilter=NULL by default, which means vfilter=m.  Setting this to something smaller, like 100000, will typically yield satisfactory SVs and is advisable when the size of the data is very large and memory is limited (as when the p and/or logitp arguments given to dmrFind are ff_matrix objects).
+}
+  \item{nsubsets}{
+used if p or logitp are ff_matrix objects.  Rather than doing computations on the whole logitp matrix, break up its m rows into chunks of m/nsubsets rows.  Default is 50, but if even that uses too much memory, set this higher.  Results do not depend on the value chosen.
 }
   \item{...}{
 Additional arguments passed to sva()
