@@ -706,7 +706,7 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
     stopifnot(length(getContainer(rawData))==nrow(p2))
     ord = order(pData(rawData)[,expcol])
     #tmp = sapply(strsplit(pData(rawData)[,"arrayUT"],"_"), function(x) x[1])
-    stopifnot(all(colnames(p2)[ord]==sampleNames(rawData)[ord]))
+    stopifnot(all(colnames(p2)[ord]==pData(rawData)[ord,IDcol]))
 
     big = "ff_matrix"%in%class(p2)
     medc = apply(p2[cont,ord],2,median)
