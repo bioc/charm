@@ -696,8 +696,8 @@ Rug <- function (x, ticksize = 0.03, side = 1, lwd = 0.5, col = par("fg"),
 #### Additional functions that produce plots:
 ##Plot distribution of control and non-control probes, to check that they worked:
 controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,ylimits=c(-6,8),outfile="./boxplots_check.pdf",height=7,width=9) {
-    p2 = methp(rawData, betweenSampleNorm="none", withinSampleNorm=FALSE, scale=FALSE, returnM=TRUE, 
-               controlProbes=controlProbes, controlIndex=controlIndex) 
+    p2 = methp(rawData, betweenSampleNorm="none", withinSampleNorm=FALSE, scale=FALSE, 
+               returnM=TRUE, controlProbes=controlProbes, controlIndex=controlIndex) 
     if(is.null(controlIndex)) {
         if(is.null(controlProbes)) stop("if is.null(controlIndex), controlProbes must be provided.")
         cont = getControlIndex(rawData, controlProbes=controlProbes)
@@ -706,7 +706,7 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
     stopifnot(length(getContainer(rawData))==nrow(p2))
     ord = order(pData(rawData)[,expcol])
     #tmp = sapply(strsplit(pData(rawData)[,"arrayUT"],"_"), function(x) x[1])
-    stopifnot(all(colnames(p2[,ord])==pData(rawData)[ord,IDcol]))
+    stopifnot(all(colnames(p2)[ord]==sampleNames(rawData)[ord]))
 
     big = "ff_matrix"%in%class(p2)
     medc = apply(p2[cont,ord],2,median)
@@ -733,7 +733,7 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
     boxplot(p2[cont,ord], outline=FALSE, xaxt="n", las=3, ylab="M (no normalization)",
             main="control probes", cex.lab=1.5, ylim=ylimits)
     abline(h=0,lty=3)    
-    plot(medd~c(1:ncol(p2[,ord])),main="median difference",xlab="",ylab="",las=3)
+    plot(medd~seq(along=ord),main="median difference",xlab="",ylab="",las=3)
     abline(h=0,lty=3)
     dev.off()
 

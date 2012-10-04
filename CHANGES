@@ -1,3 +1,6 @@
+v2.5.2
+Fixed a couple lines in controlQC so that ff_matrix objects don't unecessarily get converted to matrix objects.
+
 v2.5.1
 Modified dmrFind to handle ff_matrix p or logitp arguments: Added vfilter and nsubsets arguments to dmrFind; defined Min and Max functions; modified rowCor, logit, and ilogit functions; used them all in dmrFind. Added nsubsets argument to the args output list.  Also modified qval accordingly: changed use of lm_fit, and added vfilter and nsubsets arguments to its calls to dmrFind. Also modified the lm_fit function to handle ff_matrix dat argument.
 
