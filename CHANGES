@@ -1,3 +1,6 @@
+v2.5.3
+Updated IDcol argument documentation in controlQC help file.
+
 v2.5.2
 Fixed a couple lines in controlQC so that ff_matrix objects don't unecessarily get converted to matrix objects.
 
