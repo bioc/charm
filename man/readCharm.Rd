@@ -43,7 +43,7 @@ additional options passed on to read.xysfiles2
 This function is a convenience wrapper to read.xysfiles2 to simplify reading in DNA methylation data from the Nimblegen McrBC/CHARM microarray platform. It makes guesses about the extensions used for the methyl-depleted (md) and untreated channels (ut).
 }
 \value{
-A TilingFeatureSet object.
+A TilingFeatureSet object.  If the ff package is loaded before using this function, the output will contain ff rather than matrix objects.
 }
 \references{
 www.biostat.jhsph.edu/~maryee/charm

@@ -17,8 +17,8 @@
 
 \begin{document}
 \title{Using the charm package to estimate DNA methylation levels and find differentially methylated regions}
-\date{November, 2011}
-\author{Martin Aryee\footnote{aryee@jhu}, Peter Murakami, Rafael Irizarry}
+\date{October 10, 2012}
+\author{Peter Murakami\footnote{pmurakam@jhsph.edu}, Martin Aryee, Rafael Irizarry}
 \maketitle
 \begin{center}
 Johns Hopkins School of Medicine / Johns Hopkins School of Public Health\\Baltimore, MD, USA
@@ -91,7 +91,7 @@ The \Rcode{validatePd} function can be used to validate the sample description f
 res <- validatePd(pd)
 @
 
-Now we read in the raw data. The \Rcode{readCharm} command makes the assumption (unless told otherwise) that the two xys files for a sample have the same file name up to the suffixes 532.xys (untreated) and 635.xys (methyl-depleted).  The sampleNames argument is optional.
+Now we read in the raw data. The \Rcode{readCharm} command makes the assumption (unless told otherwise) that the two xys files for a sample have the same file name up to the suffixes 532.xys (untreated) and 635.xys (methyl-depleted).  The sampleNames argument is optional.  Note that if the \Rpackage{ff} package has been loaded previously in your R session, the output of readCharm will contain \Rcode{ff} rather than \Rcode{matrix} objects, and all subsequent \Rpackage{charm} functions acting on it (except those in pipeline 2 described below) will recognize this and use \Rcode{ff} objects also.  Using the \Rpackage{ff} package is recommended when the data set is otherwise too large for the amount of memory available.
 
 <<readData>>=
 rawData <- readCharm(files=pd$filename, path=dataDir, sampleKey=pd, 
@@ -161,7 +161,7 @@ pd  = pData(rawData)
 
 \section{Percentage methylation estimates and differentially methylated regions (DMRs)}
 
-The minimal code required to estimate methylation would be \Rcode{p <- methp(rawData, controlIndex=ctrlIdx)}. However, it is often useful to get \Rcode{methp} to produce a series of diagnostic density plots to help identify non-hybridization quality issues. The \Rcode{plotDensity} option specifies the name of the output pdf file, and the optional \Rcode{plotDensityGroups} can be used to give groups different colors.
+The minimal code required to estimate methylation would be \Rcode{p <- methp(rawData, controlIndex=ctrlIdx)}. However, it is often useful to get \Rcode{methp} to produce a series of diagnostic density plots to help identify non-hybridization quality issues. The \Rcode{plotDensity} option specifies the name of the output pdf file, and the optional \Rcode{plotDensityGroups} can be used to give groups different colors.  Remember that if the \Rpackage{ff} package was loaded before producing \Rcode{rawData} with \Rcode{readCharm}, the output of \Rcode{methp} will be an \Rcode{ff} rather than a \Rcode{matrix} object. \Rpackage{charm} functions (except those in pipeline 2 described below) will handle \Rcode{ff p} objects automatically.
 
 <<methp_density>>=
 p <- methp(rawData, controlIndex=ctrlIdx, 
@@ -191,6 +191,7 @@ pos = pos[Index]
 pns = pns[Index]
 pns = clusterMaker(chr,pos) 
 @
+You might also wish to consider excluding some probes from the between-array normalization step in \Rcode{methp} earlier using the \Rcode{excludeIndex} argument, e.g., \Rcode{excludeIndex=which(rmpmq<=50)}, however, note that it is probably inadvisable to remove probes from between-array normalization in \Rcode{methp} that you will end up using in the analysis (note that the probes with mean qc < x1 are a subset of the probes with mean qc < x2 when x1=50 and x2=75 as in this example. Setting x1>x2 is not recommended as it would result in un-normalized probes being used in the analysis).
 Using the \Rcode{clusterMaker} function was necessary in order to redefine the array regions since removing probes may result in too few probes per region or unacceptably large gaps between probes within the same region.  At this point it may also be helpful to remove arrays whose average correlation with all other arrays is below some threshold, since it is often reasonable to assume that most probes are not differentially methylated between arrays.  Unsupervised clustering would also probably tend to show such arrays as clustering separately.  Another reason for removing arrays at this point is if they have missing data on any of the covariates to be used in the following analysis.  Remember that any arrays excluded from this point forward should be removed from both \Rcode{p} and \Rcode{pd}.  
 
 To identify DMR candidates, we use the \Rcode{dmrFind} function.  As it requires the same \Rcode{mod} and \Rcode{mod0} arguments as the \Rcode{sva()} function from the \Rpackage{sva} package, we must first create these.  Data with paired samples may be accommodated by including the pair ID column as a factor in \Rcode{mod} and \Rcode{mod0}.

@@ -65,7 +65,7 @@ numeric vector of group labels used to color lines in the diagnostic density plo
 This function provides probe-level estimates of percentage DNA methylation from CHARM microarray data.
 }
 \value{
-A matrix of probe-level percentage methylation estimates, one column per sample.
+A matrix of probe-level percentage methylation estimates, one column per sample.  If the dat argument contains ff rather than matrix objects (as when it is produced by readCharm after loading the ff package), the output will be an ff object.
 }
 
 \author{
