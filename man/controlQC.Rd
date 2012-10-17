@@ -23,7 +23,7 @@ a vector of non-CpG control probe indices (can be obtained using getControlIndex
 column name of pData(rawData) with which to label samples in the output plot.
 }
   \item{expcol}{
-name of the column of pData(rawData) the values of which the points are colored differently by.
+name of the column of pData(rawData) by which to order and, if not numeric, color the boxes.
 }
   \item{ylimits}{
 ylim argument to plot()

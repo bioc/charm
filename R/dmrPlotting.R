@@ -717,23 +717,31 @@ controlQC <- function(rawData,controlProbes=NULL,controlIndex=NULL,IDcol,expcol,
     } else medm = apply(p2[-cont,ord],2,median)
     medd = medm-medc
     
+    if(!is.numeric(pData(rawData)[ord,expcol])) {
+        cols = as.numeric(factor(pData(rawData)[ord,expcol]))
+        cols0 = cols
+        cols[cols%%8==1] = 0 #change black to white
+    } else {
+        cols0 = rep(1,length(ord))
+        cols  = rep(0,length(ord))
+    }
     pdf(file=outfile, width=width, height=height)
     par(mfrow=c(3,1))
     if(big) {
-        plot(medm, xaxt="n", ylab="IQR of M (no normalization)",
-             main="non-control probes", ylim=ylimits)
+        plot(medm, xaxt="n", ylab="IQR of M (no normalization)", xlab="",
+             main="non-control probes", ylim=ylimits, pch=19, col=cols0)
         axis(1, at=1:length(ord), labels=pData(rawData)[ord,IDcol], las=3)#, cex.axis=1.5)
-        for(i in 1:nrow(qs)) segments(x0=i,y0=qs[i,1],x1=i,y1=qs[i,3])
+        for(i in 1:nrow(qs)) segments(x0=i,y0=qs[i,1],x1=i,y1=qs[i,3], col=cols0[i])
     } else {
         boxplot(p2[-cont,ord], outline=FALSE, names=pData(rawData)[ord,IDcol],
                 las=3, ylab="M (no normalization)", main="non-control probes",
-                cex.lab=1.5, ylim=ylimits)     
+                cex.lab=1.5, ylim=ylimits, col=cols)     
     }
     abline(h=0,lty=3)    
     boxplot(p2[cont,ord], outline=FALSE, xaxt="n", las=3, ylab="M (no normalization)",
-            main="control probes", cex.lab=1.5, ylim=ylimits)
+            main="control probes", cex.lab=1.5, ylim=ylimits, col=cols)
     abline(h=0,lty=3)    
-    plot(medd~seq(along=ord),main="median difference",xlab="",ylab="",las=3)
+    plot(medd~seq(along=ord),main="median difference",xlab="",ylab="",las=3, col=cols0)
     abline(h=0,lty=3)
     dev.off()
 
