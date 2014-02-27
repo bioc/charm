@@ -272,7 +272,7 @@ loessPns <- function(stat, se=NULL, pnsIndexes, pos, numProbes = 8, verbose=TRUE
 			if(ss > 1) ss = 0.75
 						
 			if(length(Index) > 4) {
-			    sstat[Index] = loessFit(stat[Index], pos[Index], span = ss, weights = 1/se[Index])$fitted
+			    sstat[Index] = loessFit(stat[Index], pos[Index], span = ss, weights = 1/se[Index], method="locfit")$fitted
 			} else sstat[Index] = median(stat[Index])
                         if(verbose) setTxtProgressBar(pb,i)
 		}

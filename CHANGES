@@ -1,3 +1,6 @@
+v2.9.1
+Added method="locfit" argument to call to loessFit in the loessPns function, to keep limma's loessFit function from using a new default as of v3.19.16 that sometimes returns NaN fitted values.  
+
 v2.5.6
 Modified controlQC to color boxes by expcol, and updated the description of the expcol argument in the controlQC manual page.
 
