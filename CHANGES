@@ -1,3 +1,6 @@
+v2.11.1
+Committed a fix to the arrayImage and spatialAdjust functions: The "index" object returned by discretize.image(), which is used in these functions, changed from a matrix in the fields package v6.9.1 to a list in v7.1.  This causes problems, so it was changed from a list back into a matrix.
+
 v2.9.1
 Added method="locfit" argument to call to loessFit in the loessPns function, to keep limma's loessFit function from using a new default as of v3.19.16 that sometimes returns NaN fitted values.  
 
