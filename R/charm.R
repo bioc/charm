@@ -760,6 +760,11 @@ arrayImage <- function(x,y,z, view="2d", blockSize=50) {
 		nx <- max(x)/blockSize
 		ny <- max(y)/blockSize
 		d <- discretize.image(cbind(y,x), m=ny, n=nx)
+                ## The "index" object returned by discretize.image() changed from a matrix 
+                ## in fields package v6.9.1 to a list in v7.1, which does not work in as.image 
+                ## below, so change it back:
+                d$index = do.call(cbind,d$index)
+                stopifnot(ncol(d$index)==2)
 		ret <- apply(z, 2, function(vec) {
 			as.image(vec, ind=d$index, nx=d$m, ny=d$n, na.rm=TRUE)		
         })		
@@ -905,6 +910,11 @@ spatialAdjust <- function(dat, copy=TRUE, blockSize, theta=1) {
         nx <- max(X, na.rm=TRUE)/blockSize
         ny <- max(Y, na.rm=TRUE)/blockSize
         d <- discretize.image(cbind(Y[I], X[I]), m=ny, n=nx)
+        ## The "index" object returned by discretize.image() changed from a matrix 
+        ## in fields package v6.9.1 to a list in v7.1, which does not work in the code 
+        ## below, so change it back:
+        d$index = do.call(cbind,d$index)
+        stopifnot(ncol(d$index)==2)
 
         # HJ
         c1 <- oApply(c1, copy=copy, fn=spatialAdjustAtom, d=d, I=I)
