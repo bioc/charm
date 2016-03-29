@@ -217,10 +217,15 @@ withq = qval(p=p, dmr=thedmrs, numiter=3, verbose=FALSE, mc=1)
 @
 The \Rcode{numiter} argument is set to 3 here only for convenience of demonstration.  In reality it should be much higher (hundreds, if not thousands).  The \Rcode{p} argument provided must be the same as the one used in \Rcode{dmrFind}.  The \Rcode{qval} function utilizes the \Rpackage{parallel} package that comes with R as of version 2.14.  By default, \Rcode{mc=1} (no parallelization), however on multiple-core machines you can set \Rcode{qval} to use more cores to parallelize the process.  If you are working in a shared computing environment, take care not to request more cores than are available to you.
 
-We may plot DMR candidates from \Rcode{dmrFind} using the \Rcode{plotDMRs} function.  In order to mark the location of CpG islands in the second panel of each plot, we must first obtain a table identifying CpG islands. CpG island definitions according to the method of Wu et al (2010) \cite{Wu2010} are available for a large number of genomes at http://rafalab.jhsph.edu/CGI.  Alternatively, CpG island definitions may be obtained from the UCSC Genome Browser.
+We may plot DMR candidates from \Rcode{dmrFind} using the \Rcode{plotDMRs} function.  In order to mark the location of CpG islands in the second panel of each plot, we must first obtain a table identifying CpG islands. CpG island definitions according to the method of Wu et al (2010) \cite{Wu2010} are available for a large number of genomes and are one source for such a table.  Alternatively, CpG island definitions may be obtained from the UCSC Genome Browser, which is what we will use here for this example.
 <<plotDMRs>>=
-cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-hg18.txt", 
-                     as.is=TRUE)
+con <- gzcon(url(paste("http://hgdownload.soe.ucsc.edu/goldenPath/hg18/database/","cpgIslandExt.txt.gz", sep="")))
+txt <- readLines(con)
+cpg.cur <- read.delim(textConnection(txt), header=FALSE, as.is=TRUE)
+cpg.cur <- cpg.cur[,1:3]
+colnames(cpg.cur) <- c("chr","start","end")
+cpg.cur <- cpg.cur[order(cpg.cur[,"chr"],cpg.cur[,"start"]),]
+
 plotDMRs(dmrs=thedmrs, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$tissue, 
          outfile="./colon-liver.pdf", which_plot=c(1), 
          which_points=c("colon","liver"), smoo="loess", ADD=3000, 

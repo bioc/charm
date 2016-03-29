@@ -1,3 +1,6 @@
+v2.17.1
+Example code in qval.Rd and in the vignette no longer use the CpG island definitions at rafalab.jhsph.edu, which is no longer active.  In qval.Rd the line is commented out, and in the vignette the code now uses the UCSC genome browser CpG island definitions.
+
 v2.11.1
 Committed a fix to the arrayImage and spatialAdjust functions: The "index" object returned by discretize.image(), which is used in these functions, changed from a matrix in the fields package v6.9.1 to a list in v7.1.  This causes problems, so it was changed from a list back into a matrix.
 
