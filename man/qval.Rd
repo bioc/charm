@@ -117,7 +117,7 @@ Martin Aryee, Peter Murakami <pmurakam@jhsph.edu>, Rafael Irizarry
 
         #### Plotting not run:
         ## Plot DMR candidates 1,2, and 4, for example.  First have to load a table of CpG islands.
-        cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-hg18.txt", as.is=TRUE)
+        #cpg.cur = read.delim("http://rafalab.jhsph.edu/CGI/model-based-cpg-islands-hg18.txt", as.is=TRUE)
         #plotDMRs(dmrs=thedmrs, Genome=Hsapiens, cpg.islands=cpg.cur, exposure=pd$tissue, outfile="./colon-liver.pdf", which_plot=c(1,2,4), which_points=c("colon","liver"), smoo="loess", ADD=3000, cols=c("black","red","blue"))
 
         ## Plot DMR candidates, and in the 3rd panel plot the difference in average green channel:
