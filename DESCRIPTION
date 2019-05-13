@@ -1,7 +1,7 @@
 Package: charm
 Type: Package
 Title: Analysis of DNA methylation data from CHARM microarrays
-Version: 2.31.0
+Version: 2.31.1
 Date: 2016-03-28
 Author: Martin Aryee, Peter Murakami, Harris Jaffee, Rafael Irizarry
 Maintainer: Peter Murakami <pmurakam@jhu.edu>
@@ -19,3 +19,4 @@ Description: This package implements analysis tools for DNA methylation
 License: LGPL (>= 2)
 LazyLoad: yes
 biocViews: Microarray, DNAMethylation
+PackageStatus: Deprecated
